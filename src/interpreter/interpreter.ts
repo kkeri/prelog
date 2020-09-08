@@ -12,8 +12,8 @@ export class Environment {
 
   constructor (
     public program: Model,
-    private args: Syntax[] = [],
-    private argIdx: number = 0,
+    public args: Syntax[] = [],
+    public argIdx: number = 0,
   ) { }
 
   extend (syntax: Syntax): Model {
@@ -107,13 +107,19 @@ const evaluationRules = new UnaryDispatcher<Environment, Syntax, Model>(
       }
     })
   .add(syntax.Brackets,
-    (env, t) => t.body.reduce<Model>(
-      (m: Model, e: Syntax) => upperJoin(env, m, evaluate(env, e)),
-      failure,
-    ))
+    (env, t) => {
+      const childEnv = new Environment(env.program, env.args, env.argIdx)
+      return t.body.reduce<Model>(
+        (m: Model, e: Syntax) => upperJoin(childEnv, m, evaluate(childEnv, e)),
+        failure,
+      )
+    })
   .add(syntax.Braces,
     (env, t) => t.body.reduce<Model>(
-      (m: Model, e: Syntax) => lowerMeet(env, m, evaluate(env, e)),
+      (m: Model, e: Syntax) => {
+        const childEnv = new Environment(env.program, env.args, env.argIdx)
+        return lowerMeet(childEnv, m, evaluate(childEnv, e))
+      },
       success,
     ))
   .add(syntax.Name,
