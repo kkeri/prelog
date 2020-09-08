@@ -1,4 +1,4 @@
-import { And, Or, Model } from "./model"
+import { Model } from "./model"
 
 // Threshold algebra
 
@@ -12,24 +12,20 @@ export enum Rank {
   MetaFailure = -3,
 }
 
-export const thresholdJoin = <Ctx> (limit: Rank, join: (ctx: Ctx, a: Model, b: Model) => Model | null) =>
+export const thresholdJoin = <Ctx> (threshold: Rank, join: (ctx: Ctx, a: Model, b: Model) => Model) =>
   (ctx: Ctx, a: Model, b: Model): Model => {
-    if (a.rank >= limit) return a
+    if (a.rank >= threshold) return a
     if (a.rank > b.rank) return a
     if (b.rank > a.rank) return b
-    const j = join(ctx, a, b)
-    if (j) return j
-    return new Or(a, b, a.rank)
+    return join(ctx, a, b)
   }
 
-export const thresholdMeet = <Ctx> (limit: Rank, meet: (ctx: Ctx, a: Model, b: Model) => Model | null) =>
+export const thresholdMeet = <Ctx> (threshold: Rank, meet: (ctx: Ctx, a: Model, b: Model) => Model) =>
   (ctx: Ctx, a: Model, b: Model): Model => {
-    if (a.rank <= limit) return a
+    if (a.rank <= threshold) return a
     if (a.rank < b.rank) return a
     if (b.rank < a.rank) return b
-    const j = meet(ctx, a, b)
-    if (j) return j
-    return new And(a, b, a.rank)
+    return meet(ctx, a, b)
   }
 
 export function rankToString (rank: Rank): string {
