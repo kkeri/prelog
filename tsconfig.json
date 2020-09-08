@@ -1,0 +1,25 @@
+{
+	"compilerOptions": {
+		"experimentalDecorators": true,
+		"allowJs": false,
+		"alwaysStrict": true,
+		"declaration": false,
+		"forceConsistentCasingInFileNames": true,
+		"noImplicitReturns": true,
+		"preserveConstEnums": true,
+		"downlevelIteration": true,
+		"sourceMap": true,
+		"strictNullChecks": true,
+		"moduleResolution": "node",
+		"module": "commonjs",
+		"target": "ES2017",
+		"lib": [
+			"es2017"
+		],
+		"outDir": "lib",
+		"rootDir": "src"
+	},
+	"include": [
+		"src/**/*"
+	]
+}

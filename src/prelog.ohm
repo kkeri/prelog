@@ -1,0 +1,85 @@
+Prelog {
+
+	Module = ListOf<Term, #semicolon> #semicolon?
+
+	Term = Sequence
+
+	Sequence = NonemptyListOf<Primary, #spaceInline>
+
+	Primary =
+		| Parentheses
+		| Brackets
+		| Braces
+		| identifier
+		| symbol
+		| number
+		| string
+
+	Parentheses =
+		| "(" NonemptyListOf<Term, #comma> #comma? ")" -- full
+		| "(" ")" -- empty
+
+	Brackets =
+		| "[" NonemptyListOf<Term, #comma> #comma? "]" -- full
+		| "[" "]" -- empty
+
+	Braces =
+		| "{" NonemptyListOf<Term, #semicolon> #semicolon? "}" -- full
+		| "{" "}" -- empty
+
+	// lexer
+
+	space := "\t" | " " | "\n" | "\r" | comment
+	spaceInline = "\t" | " " | commentInline
+	comment = blockComment | lineEndComment
+	commentInline = blockCommentInline | lineEndComment
+	blockComment = "/*" (~"*/" any)* "*/"
+	blockCommentInline = "/*" (~("*/" | "\n" | "\r") any)* "*/"
+	lineEndComment = "//" (~("\n" | "\r") any)*
+
+	semicolon =
+		| space* (";" | "," | end)
+		| spaceInline* ("\r" | "\n" | end)
+
+	comma =
+		| space* ("," | end)
+		| spaceInline* ("\r" | "\n" | end)
+
+	identifier = identifierStart identifierPart*
+	identifierStart = "A".."Z" | "a".."z" | "_" | "@"
+	identifierPart = identifierStart | digit
+
+	symbol = symbolChar+
+	symbolChar =
+		| "+" | "-" | "*" | "/" | "%" | "^"
+		| "=" | "<" | ">"
+		| "#" | "&" | "|" | "§" | "?" | "!" | "×"
+
+	number = "-"? natural ("." fractionalPart)? exponentPart?
+	natural = positiveInteger | "0"
+	positiveInteger = nonZeroDigit digit*
+	fractionalPart = digit+
+	exponentPart = ("e" | "E") ("+" | "-")? digit+
+	nonZeroDigit = "1".."9"
+
+	string = singleQuotedString | doubleQuotedString
+	singleQuotedString = "\'" sqStringCharacter* "\'"
+	sqStringCharacter = sqNormalChar | escapeSequence
+	sqNormalChar = ~("\'" | "\\" | "\u0000".."\u001f") any
+	doubleQuotedString = "\"" dqStringCharacter* "\""
+	dqStringCharacter = dqNormalChar | escapeSequence
+	dqNormalChar = ~("\"" | "\\" | "\u0000".."\u001f") any
+	escapeSequence = "\\" escapeSpec
+	escapeSpec =
+		| "\""
+		| "'"
+		| "\\"
+		| "\\/"
+		| "b"
+		| "f"
+		| "n"
+		| "r"
+		| "t"
+		| unicodeEscapeSpec
+	unicodeEscapeSpec = "u" hexDigit hexDigit hexDigit hexDigit
+}
