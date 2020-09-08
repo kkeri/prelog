@@ -48,7 +48,7 @@ export class Environment implements ArgumentReader {
   }
 }
 
-export class ResolverInterpreter implements Interpreter {
+export class NativeInterpreter implements Interpreter {
   env: Environment = new Environment(new And(
     new Definition(new Name('def'), new DefProc()),
     new Definition(new Name('proc'), new ProcProc()),
