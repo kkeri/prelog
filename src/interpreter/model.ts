@@ -318,5 +318,5 @@ export class Atom extends Model {
 
 // Returns true if two models are structurally equal.
 export function structEqual (a: Model, b: Model): boolean {
-  return (a.constructor === b.constructor) && a.structEqual(b)
+  return a === b || (a.constructor === b.constructor && a.structEqual(b))
 }

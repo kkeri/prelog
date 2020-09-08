@@ -91,7 +91,7 @@ export class Num extends Syntax {
 // helpers
 
 export function equalSyntax (a: Syntax, b: Syntax): boolean {
-  return a.constructor === b.constructor && a.structEqual(b)
+  return a === b || (a.constructor === b.constructor && a.structEqual(b))
 }
 
 function equalArrays (a: Syntax[], b: Syntax[]): boolean {
