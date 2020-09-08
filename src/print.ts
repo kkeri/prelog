@@ -17,7 +17,7 @@ export const printActions = new ActionMap().addClasses(syntax, {
   },
 
   Parentheses (printer) {
-    printer.fmt.block(this.body, (elem) => printer.print(elem, operator.parenList), {
+    printer.fmt.block(this.body, (elem) => printer.print(elem), {
       open: '(',
       close: ')',
       separator: ', ',
@@ -25,7 +25,7 @@ export const printActions = new ActionMap().addClasses(syntax, {
   },
 
   Brackets (printer) {
-    printer.fmt.block(this.body, (elem) => printer.print(elem, operator.bracketList), {
+    printer.fmt.block(this.body, (elem) => printer.print(elem), {
       open: { value: '[' },
       close: { value: ']' },
       terminator: { value: ', ', breakValue: '' }
@@ -33,7 +33,7 @@ export const printActions = new ActionMap().addClasses(syntax, {
   },
 
   Braces (printer) {
-    printer.fmt.block(this.body, (elem) => printer.print(elem, operator.braceList), {
+    printer.fmt.block(this.body, (elem) => printer.print(elem), {
       open: { value: '{' },
       close: { value: '}' },
       terminator: { value: '; ', breakValue: '' }
@@ -60,21 +60,6 @@ export const printActions = new ActionMap().addClasses(syntax, {
 })
 
 const operator = {
-  parenList: {
-    precedence: 70,
-    fixity: 'in',
-    symbol: ',',
-  },
-  bracketList: {
-    precedence: 70,
-    fixity: 'in',
-    symbol: ',',
-  },
-  braceList: {
-    precedence: 70,
-    fixity: 'in',
-    symbol: ';',
-  },
   sequence: {
     precedence: 70,
     fixity: 'in',
