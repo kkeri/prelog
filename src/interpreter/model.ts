@@ -1,7 +1,8 @@
 import * as syntax from "../syntax"
-import { Syntax, equalSyntax } from "../syntax"
+import { equalSyntax, Syntax } from "../syntax"
+import { Environment } from "./environment"
+import { evaluate, join, meet, undef } from "./interpreter"
 import { Rank } from "./threshold"
-import { Environment, evaluate, undef, join, meet } from "./interpreter"
 
 export abstract class Model implements Model {
   // Plays role in operations of threshold algebra.
@@ -146,6 +147,35 @@ export class Process extends Model {
 
   meet (other: this): Model {
     return equalSyntax(this.body, other.body) ? this : undef
+  }
+}
+
+export class NativeProcess extends Model {
+  rank = Rank.Neutral
+
+  constructor (
+    public syntax: Syntax,
+    public invokeFn: (env: Environment) => Model,
+  ) { super() }
+
+  structEqual (other: this): boolean {
+    return this === other
+  }
+
+  reflect () {
+    return this.syntax
+  }
+
+  invoke (env: Environment): Model {
+    return this.invokeFn(env)
+  }
+
+  join (other: this): Model {
+    return this === other ? this : undef
+  }
+
+  meet (other: this): Model {
+    return this === other ? this : undef
   }
 }
 

@@ -2,52 +2,15 @@ import { Interpreter } from '../interpreter'
 import * as syntax from "../syntax"
 import { Syntax } from '../syntax'
 import { BinaryDispatcher, UnaryDispatcher } from '../util/dispatch'
+import { Environment } from './environment'
 import { And, Atom, Definition, Model, Name, Num, Or, SemanticsError, Str, structEqual, Sym, SyntaxError } from './model'
-import { DefProc, ProcProc } from './native'
+import { getNativeEnvironment } from './native'
 import { Rank, thresholdJoin, thresholdMeet } from './threshold'
 
 // A native, non-extendable interpreter based on resolution.
 
-export class Environment {
-
-  constructor (
-    public program: Model,
-    public args: Syntax[] = [],
-    public argIdx: number = 0,
-  ) { }
-
-  extend (syntax: Syntax): Model {
-    const model = evaluate(this, syntax)
-    if (model instanceof Definition) {
-      this.program = lowerMeet(this, this.program, model)
-    }
-    return model
-  }
-
-  // Returns and shifts away the next argument.
-  // Throws EvalError if there are no more arguments.
-  next () {
-    if (this.argIdx < this.args.length) {
-      return this.args[this.argIdx++]
-    }
-    else {
-      throw new Error('too few arguments')
-    }
-  }
-
-  // Returns the upcoming argument.
-  // Returns null if there are no more arguments.
-  peek () {
-    return this.argIdx < this.args.length ? this.args[this.argIdx] : null
-  }
-}
-
 export class NativeInterpreter implements Interpreter {
-  env: Environment = new Environment(new And(
-    new Definition(new Name('def'), new DefProc()),
-    new Definition(new Name('proc'), new ProcProc()),
-    Rank.Neutral,
-  ))
+  env: Environment = getNativeEnvironment()
 
   constructor (
     private args: Syntax[] = [],
@@ -170,11 +133,11 @@ const meetRules = new BinaryDispatcher<Environment, Model, Model, Model>(
   (env, a, b) => a.constructor === b.constructor ? a.meet(b, env) : undef)
 
 // Find all alternatives.
-const upperJoin = thresholdJoin(Rank.Top, join)
+export const upperJoin = thresholdJoin(Rank.Top, join)
 
 // Find the first alternative.
-const lowerJoin = thresholdJoin(Rank.Bottom + 1, join)
+export const lowerJoin = thresholdJoin(Rank.Bottom + 1, join)
 
-const upperMeet = thresholdMeet(Rank.Top - 1, meet)
+export const upperMeet = thresholdMeet(Rank.Top - 1, meet)
 
-const lowerMeet = thresholdMeet(Rank.Bottom, meet)
+export const lowerMeet = thresholdMeet(Rank.Bottom, meet)
