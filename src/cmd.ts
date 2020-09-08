@@ -58,7 +58,7 @@ export const createCommandProcessor = (createInterpreter: () => Interpreter) =>
 
         case 'p':
         case 'print':
-          printProgram()
+          printTerm(ip.current()).br()
           break
 
         case 'r':
@@ -78,7 +78,7 @@ export const createCommandProcessor = (createInterpreter: () => Interpreter) =>
     }
 
     function processStatement (str: string) {
-      const stmt = parseStatement(str)
+      const stmt = parseTerm(str)
       if (stmt) {
         try {
           const nf = ip.extend(stmt)
@@ -90,11 +90,9 @@ export const createCommandProcessor = (createInterpreter: () => Interpreter) =>
       }
     }
 
+    // helpers
 
-    // helper functions
-
-
-    function parseStatement (str: string) {
+    function parseTerm (str: string) {
       const diag = new Diagnostics()
       const stmt = parser.parse(str, { diag, rule: 'Term' })
       if (!stmt) {
@@ -103,12 +101,6 @@ export const createCommandProcessor = (createInterpreter: () => Interpreter) =>
         }
       }
       return stmt
-    }
-
-    function printProgram () {
-      const c = ip.current()
-      printTerm(c).br()
-      return formatter
     }
 
     function printTerm (obj) {
