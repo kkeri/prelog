@@ -6,12 +6,6 @@ import { Sequence } from './syntax'
 
 export const printActions = new ActionMap().addClasses(syntax, {
 
-  // surface syntax
-
-  Program (printer) {
-    for (const decl of this.declarations) printer.print(decl).br()
-  },
-
   Sequence (printer, op) {
     if (op === operator.sequence) {
       // copy the sequence to avoid circularity

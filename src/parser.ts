@@ -4,12 +4,6 @@ import * as syntax from './syntax'
 
 export const parser = new OhmParser(join(__dirname, '../lib/recipe.js'), {
 
-  Module (stmts, _sc_) {
-    return stmts.model()
-  },
-
-  // terms
-
   Sequence (body) {
     const elements = body.model()
     if (elements.length === 1) {

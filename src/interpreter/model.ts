@@ -31,16 +31,6 @@ export abstract class Model implements Model {
   }
 }
 
-export class Program extends Model {
-  constructor (
-    public body: Model[],
-  ) { super() }
-
-  reflect () {
-    return new syntax.Program(this.body.map(m => m.reflect()))
-  }
-}
-
 // The disjunction of two unrelated models.
 export class Or extends Model implements Model {
   constructor (

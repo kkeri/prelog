@@ -6,16 +6,6 @@ export class Syntax {
   }
 }
 
-export class Program extends Syntax {
-  constructor (
-    public body: Syntax[],
-  ) { super() }
-
-  structEqual (other: this): boolean {
-    return equalArrays(this.body, other.body)
-  }
-}
-
 export class Sequence extends Syntax {
   constructor (
     public body: Syntax[],

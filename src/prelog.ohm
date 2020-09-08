@@ -1,7 +1,5 @@
 Prelog {
 
-	Module = ListOf<Term, #semicolon> #semicolon?
-
 	Term = Sequence
 
 	Sequence = NonemptyListOf<Primary, #spaceInline>
