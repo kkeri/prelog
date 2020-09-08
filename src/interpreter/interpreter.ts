@@ -67,16 +67,6 @@ export const undef = new Atom(Rank.MetaFailure, new syntax.Name('undefined'))
 export const success = new Atom(Rank.Top, new syntax.Name('success'))
 export const failure = new Atom(Rank.Bottom, new syntax.Name('failure'))
 
-function verboseFailure (descr: string, model: Model) {
-  return new SemanticsError(descr, model)
-}
-
-function silentFailure () {
-  return failure
-}
-
-const fail = verboseFailure
-
 export function evaluate (env: Environment, syntax: Syntax): Model {
   return evaluationRules.apply(env, syntax)
 }
@@ -87,6 +77,16 @@ export function resolve (env: Environment, a: Model, b: Model): Model {
 
 export function lookup (env: Environment, a: Model, b: Model): Model {
   return lookupRules.apply(env, a, b)
+}
+
+export function join (env: Environment, a: Model, b: Model): Model {
+  const j = joinRules.apply(env, a, b)
+  return j === undef ? new Or(a, b, a.rank) : j
+}
+
+export function meet (env: Environment, a: Model, b: Model): Model {
+  const m = meetRules.apply(env, a, b)
+  return m === undef ? new And(a, b, a.rank) : m
 }
 
 // Rules
@@ -155,19 +155,9 @@ const lookupRules = new BinaryDispatcher<Environment, Model, Model, Model>(
   .add(Definition, Sym,
     (env, a, b) => structEqual(a.a, b) ? a.b : undef)
 
-export function join (env: Environment, a: Model, b: Model): Model {
-  const j = joinRules.apply(env, a, b)
-  return j === undef ? new Or(a, b, a.rank) : j
-}
-
 const joinRules = new BinaryDispatcher<Environment, Model, Model, Model>(
   // default case
   (env, a, b) => a.constructor === b.constructor ? a.join(b, env) : undef)
-
-export function meet (env: Environment, a: Model, b: Model): Model {
-  const m = meetRules.apply(env, a, b)
-  return m === undef ? new And(a, b, a.rank) : m
-}
 
 const meetRules = new BinaryDispatcher<Environment, Model, Model, Model>(
   // default case
