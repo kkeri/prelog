@@ -3,22 +3,12 @@ import * as syntax from "../syntax"
 import { Syntax } from '../syntax'
 import { BinaryDispatcher, UnaryDispatcher } from '../util/dispatch'
 import { And, Atom, Definition, Model, Name, Num, Or, SemanticsError, Str, structEqual, Sym, SyntaxError } from './model'
-import { Rank, thresholdJoin, thresholdMeet } from './threshold'
 import { DefProc, ProcProc } from './native'
-import { constructor, number } from 'yargs'
+import { Rank, thresholdJoin, thresholdMeet } from './threshold'
 
 // A native, non-extendable interpreter based on resolution.
 
-export interface ArgumentReader {
-  // Returns and shifts away the next argument.
-  // Throws EvalError if there are no more arguments.
-  next (): Syntax
-  // Returns the upcoming argument.
-  // Returns null if there are no more arguments.
-  peek (): Syntax | null
-}
-
-export class Environment implements ArgumentReader {
+export class Environment {
 
   constructor (
     public program: Model,
@@ -34,6 +24,8 @@ export class Environment implements ArgumentReader {
     return model
   }
 
+  // Returns and shifts away the next argument.
+  // Throws EvalError if there are no more arguments.
   next () {
     if (this.argIdx < this.args.length) {
       return this.args[this.argIdx++]
@@ -43,6 +35,8 @@ export class Environment implements ArgumentReader {
     }
   }
 
+  // Returns the upcoming argument.
+  // Returns null if there are no more arguments.
   peek () {
     return this.argIdx < this.args.length ? this.args[this.argIdx] : null
   }
