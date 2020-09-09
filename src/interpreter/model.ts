@@ -179,6 +179,32 @@ export class NativeProcess extends Model {
   }
 }
 
+// Marks the starting point of the parent environment in the program.
+export class ParentEnvironment extends Model {
+  rank = Rank.Neutral
+
+  constructor (
+    public model: Model,
+    public hidden?: boolean,
+  ) { super() }
+
+  structEqual (other: this): boolean {
+    return this.model === other.model
+  }
+
+  reflect () {
+    return this.model.reflect()
+  }
+
+  join (other: this): Model {
+    return this === other ? this : undef
+  }
+
+  meet (other: this): Model {
+    return this === other ? this : undef
+  }
+}
+
 export class SyntaxError extends Model {
   rank = Rank.Bottom
 

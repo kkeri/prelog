@@ -3,7 +3,7 @@ import * as syntax from "../syntax"
 import { OutputStream } from "../types"
 import { Environment } from "./environment"
 import { evaluate, lowerMeet, resolve, success } from "./interpreter"
-import { And, Definition, Model, Name, NativeProcess, Process, SyntaxError } from "./model"
+import { And, Definition, Model, Name, NativeProcess, Process, SyntaxError, ParentEnvironment } from "./model"
 
 export function getNativeEnvironment (): Environment {
   const env = new Environment(success, {}, {})
@@ -38,15 +38,21 @@ const nativeProcesses = {
 }
 
 export function printEnvironment (env: Environment, out: OutputStream) {
-  _printEnvironment(env, out, env.program)
+  _printEnvironment(env.program, out)
 }
 
-export function _printEnvironment (env: Environment, out: OutputStream, model: Model) {
-  if (model instanceof And) {
-    _printEnvironment(env, out, model.a)
-    _printEnvironment(env, out, model.b)
+export function _printEnvironment (m: Model, out: OutputStream) {
+  if (m instanceof And) {
+    _printEnvironment(m.a, out)
+    _printEnvironment(m.b, out)
+  }
+  else if (m instanceof ParentEnvironment) {
+    if (m.hidden) {
+      // don't print a hidden environment
+    }
+    else _printEnvironment(m.model, out)
   }
   else {
-    out.write(model.reflect())
+    out.write(m.reflect())
   }
 }

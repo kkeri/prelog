@@ -2,8 +2,8 @@ import { Interpreter, InputStream, OutputStream } from '../types'
 import * as syntax from "../syntax"
 import { Syntax } from '../syntax'
 import { BinaryDispatcher, UnaryDispatcher } from '../util/dispatch'
-import { Environment } from './environment'
-import { And, Atom, Definition, Model, Name, Num, Or, SemanticsError, Str, structEqual, Sym, SyntaxError } from './model'
+import { Environment, inheritEnv } from './environment'
+import { And, Atom, Definition, Model, Name, Num, Or, SemanticsError, Str, structEqual, Sym, SyntaxError, ParentEnvironment } from './model'
 import { getNativeEnvironment } from './native'
 import { Rank, thresholdJoin, thresholdMeet } from './threshold'
 import { Dictionary } from '../util/types'
@@ -20,7 +20,8 @@ export class NativeInterpreter implements Interpreter {
     argIdx: number = 0,
   ) {
     const nativeEnv = getNativeEnvironment()
-    this.env = new Environment(nativeEnv.program, inputs, outputs, args, argIdx)
+    const parentEnv = new ParentEnvironment(nativeEnv.program, true)
+    this.env = new Environment(parentEnv, inputs, outputs, args, argIdx)
   }
 
   extend (syntax: Syntax): Syntax {
@@ -67,9 +68,11 @@ const evaluationRules = new UnaryDispatcher<Environment, Syntax, Model>(
   .add(syntax.Sequence,
     (env, t) => {
       try {
-        env = new Environment(env.program, env.inputs, env.outputs, t.body)
-        const head = evaluate(env, env.next())
-        return head.invoke(env)
+        const childEnv = inheritEnv(env)
+        childEnv.args = t.body
+        childEnv.argIdx = 0
+        const head = evaluate(env, childEnv.next())
+        return head.invoke(childEnv)
       }
       catch (e) {
         return new SyntaxError(e.message, t)
@@ -77,7 +80,7 @@ const evaluationRules = new UnaryDispatcher<Environment, Syntax, Model>(
     })
   .add(syntax.Brackets,
     (env, t) => {
-      const childEnv = new Environment(env.program, env.inputs, env.outputs)
+      const childEnv = inheritEnv(env)
       return t.body.reduce<Model>(
         (m: Model, e: Syntax) => upperJoin(childEnv, m, evaluate(childEnv, e)),
         failure,
@@ -86,7 +89,7 @@ const evaluationRules = new UnaryDispatcher<Environment, Syntax, Model>(
   .add(syntax.Braces,
     (env, t) => t.body.reduce<Model>(
       (m: Model, e: Syntax) => {
-        const childEnv = new Environment(env.program, env.inputs, env.outputs)
+        const childEnv = inheritEnv(env)
         return lowerMeet(childEnv, m, evaluate(childEnv, e))
       },
       success,
@@ -125,6 +128,8 @@ const lookupRules = new BinaryDispatcher<Environment, Model, Model, Model>(
     (env, a, b) => lowerMeet(env, lookup(env, a.a, b), lookup(env, a.b, b)))
   .add(And, null,
     (env, a, b) => lowerJoin(env, lookup(env, a.b, b), lookup(env, a.a, b)))
+  .add(ParentEnvironment, null,
+    (env, a, b) => lookup(env, a.model, b))
   .add(Definition, Name,
     (env, a, b) => structEqual(a.a, b) ? a.b : undef)
   .add(Definition, Sym,

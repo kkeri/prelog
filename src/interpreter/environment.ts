@@ -2,7 +2,7 @@ import { Syntax } from "../syntax"
 import { InputStream, OutputStream } from "../types"
 import { Dictionary } from "../util/types"
 import { evaluate, lowerMeet } from "./interpreter"
-import { Definition, Model } from "./model"
+import { Definition, Model, ParentEnvironment } from "./model"
 
 export class Environment {
 
@@ -12,7 +12,9 @@ export class Environment {
     public outputs: Dictionary<OutputStream>,
     public args: Syntax[] = [],
     public argIdx: number = 0,
-  ) { }
+  ) {
+    this.program
+  }
 
   extend (syntax: Syntax): Model {
     const model = evaluate(this, syntax)
@@ -38,4 +40,9 @@ export class Environment {
   peek () {
     return this.argIdx < this.args.length ? this.args[this.argIdx] : null
   }
+}
+
+export function inheritEnv (env: Environment): Environment {
+  return new Environment(new ParentEnvironment(env.program),
+    env.inputs, env.outputs, env.args, env.argIdx)
 }
