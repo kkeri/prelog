@@ -1,6 +1,6 @@
 import stream = require('stream')
 import * as colors from 'colors'
-import { Interpreter } from './interpreter'
+import { Interpreter } from './types'
 import { parser } from './parser'
 import { printActions } from './print'
 import { Diagnostics } from './util/diag'

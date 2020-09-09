@@ -1,4 +1,4 @@
-import { Interpreter } from '../interpreter'
+import { Interpreter, InputStream, OutputStream } from '../types'
 import * as syntax from "../syntax"
 import { Syntax } from '../syntax'
 import { BinaryDispatcher, UnaryDispatcher } from '../util/dispatch'
@@ -6,16 +6,22 @@ import { Environment } from './environment'
 import { And, Atom, Definition, Model, Name, Num, Or, SemanticsError, Str, structEqual, Sym, SyntaxError } from './model'
 import { getNativeEnvironment } from './native'
 import { Rank, thresholdJoin, thresholdMeet } from './threshold'
+import { Dictionary } from '../util/types'
 
 // A native, non-extendable interpreter based on resolution.
 
 export class NativeInterpreter implements Interpreter {
-  env: Environment = getNativeEnvironment()
+  env: Environment
 
   constructor (
-    private args: Syntax[] = [],
-    private argIdx: number = 0,
-  ) { }
+    inputs: Dictionary<InputStream>,
+    outputs: Dictionary<OutputStream>,
+    args: Syntax[] = [],
+    argIdx: number = 0,
+  ) {
+    const nativeEnv = getNativeEnvironment()
+    this.env = new Environment(nativeEnv.program, inputs, outputs, args, argIdx)
+  }
 
   extend (syntax: Syntax): Syntax {
     return this.env.extend(syntax).reflect()
@@ -61,7 +67,7 @@ const evaluationRules = new UnaryDispatcher<Environment, Syntax, Model>(
   .add(syntax.Sequence,
     (env, t) => {
       try {
-        env = new Environment(env.program, t.body, 0)
+        env = new Environment(env.program, env.inputs, env.outputs, t.body)
         const head = evaluate(env, env.next())
         return head.invoke(env)
       }
@@ -71,7 +77,7 @@ const evaluationRules = new UnaryDispatcher<Environment, Syntax, Model>(
     })
   .add(syntax.Brackets,
     (env, t) => {
-      const childEnv = new Environment(env.program, env.args, env.argIdx)
+      const childEnv = new Environment(env.program, env.inputs, env.outputs)
       return t.body.reduce<Model>(
         (m: Model, e: Syntax) => upperJoin(childEnv, m, evaluate(childEnv, e)),
         failure,
@@ -80,7 +86,7 @@ const evaluationRules = new UnaryDispatcher<Environment, Syntax, Model>(
   .add(syntax.Braces,
     (env, t) => t.body.reduce<Model>(
       (m: Model, e: Syntax) => {
-        const childEnv = new Environment(env.program, env.args, env.argIdx)
+        const childEnv = new Environment(env.program, env.inputs, env.outputs)
         return lowerMeet(childEnv, m, evaluate(childEnv, e))
       },
       success,

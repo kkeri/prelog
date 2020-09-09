@@ -1,11 +1,15 @@
-import { Model, Definition } from "./model"
 import { Syntax } from "../syntax"
+import { InputStream, OutputStream } from "../types"
+import { Dictionary } from "../util/types"
 import { evaluate, lowerMeet } from "./interpreter"
+import { Definition, Model } from "./model"
 
 export class Environment {
 
   constructor (
     public program: Model,
+    public inputs: Dictionary<InputStream>,
+    public outputs: Dictionary<OutputStream>,
     public args: Syntax[] = [],
     public argIdx: number = 0,
   ) { }
