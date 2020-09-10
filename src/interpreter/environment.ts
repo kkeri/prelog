@@ -2,7 +2,7 @@ import { Syntax } from "../syntax"
 import { InputStream, OutputStream } from "../types"
 import { Dictionary } from "../util/types"
 import { evaluate, lowerMeet } from "./interpreter"
-import { Definition, Model, ParentEnvironment } from "./model"
+import { Model, ParentEnvironment } from "./model"
 
 export class Environment {
 
@@ -18,9 +18,7 @@ export class Environment {
 
   extend (syntax: Syntax): Model {
     const model = evaluate(this, syntax)
-    if (model instanceof Definition) {
-      this.program = lowerMeet(this, this.program, model)
-    }
+    this.program = lowerMeet(this, this.program, model)
     return model
   }
 
