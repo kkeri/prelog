@@ -1,6 +1,6 @@
 import { Interpreter, InputStream, OutputStream } from '../types'
 import * as syntax from "../syntax"
-import { Syntax } from '../syntax'
+import { Syntax, equalSyntax } from '../syntax'
 import { BinaryDispatcher, UnaryDispatcher } from '../util/dispatch'
 import { Environment, inheritEnv } from './environment'
 import { And, Atom, Definition, Model, Name, Num, Or, SemanticsError, Str, structEqual, Sym, SyntaxError, ParentEnvironment } from './model'
@@ -36,6 +36,7 @@ export class NativeInterpreter implements Interpreter {
 export const undef = new Atom(Rank.MetaFailure, new syntax.Name('undefined'))
 export const success = new Atom(Rank.Top, new syntax.Name('success'))
 export const failure = new Atom(Rank.Bottom, new syntax.Name('failure'))
+export const noLookup = new Atom(Rank.Bottom, new syntax.Name('noLookup'))
 
 export function evaluate (env: Environment, syntax: Syntax): Model {
   return evaluationRules.apply(env, syntax)
@@ -45,7 +46,7 @@ export function resolve (env: Environment, a: Model, b: Model): Model {
   return resolutionRules.apply(env, a, b)
 }
 
-export function lookup (env: Environment, a: Model, b: Model): Model {
+export function lookup (env: Environment, a: Model, b: Syntax): Model {
   return lookupRules.apply(env, a, b)
 }
 
@@ -95,9 +96,9 @@ const evaluationRules = new UnaryDispatcher<Environment, Syntax, Model>(
       success,
     ))
   .add(syntax.Name,
-    (env, t) => lookup(env, env.program, new Name(t.value)))
+    (env, t) => lookup(env, env.program, t))
   .add(syntax.Sym,
-    (env, t) => lookup(env, env.program, new Sym(t.value)))
+    (env, t) => lookup(env, env.program, t))
   .add(syntax.Str,
     (env, t) => new Str(t.value))
   .add(syntax.Num,
@@ -117,15 +118,15 @@ const resolutionRules = new BinaryDispatcher<Environment, Model, Model, Model>(
   .add(Atom, Atom,
     (env, a, b) => (a === b) ? success : undef)
   .add(Definition, Definition,
-    (env, a, b) => structEqual(a.a, b.a)
+    (env, a, b) => equalSyntax(a.a, b.a)
       ? structEqual(a.b, b.b)
         ? success
         : new SemanticsError('conflicting definition', b)
       : b)
 
-const lookupRules = new BinaryDispatcher<Environment, Model, Model, Model>(
+const lookupRules = new BinaryDispatcher<Environment, Model, Syntax, Model>(
   // default case
-  (env) => undef)
+  (env) => noLookup)
 
   // structural rules
   .add(Or, null,
@@ -136,10 +137,10 @@ const lookupRules = new BinaryDispatcher<Environment, Model, Model, Model>(
   // specific rules
   .add(ParentEnvironment, null,
     (env, a, b) => lookup(env, a.model, b))
-  .add(Definition, Name,
-    (env, a, b) => structEqual(a.a, b) ? a.b : undef)
-  .add(Definition, Sym,
-    (env, a, b) => structEqual(a.a, b) ? a.b : undef)
+  .add(Definition, syntax.Name,
+    (env, a, b) => equalSyntax(a.a, b) ? a.b : noLookup)
+  .add(Definition, syntax.Sym,
+    (env, a, b) => equalSyntax(a.a, b) ? a.b : noLookup)
 
 const joinRules = new BinaryDispatcher<Environment, Model, Model, Model>(
   // default case

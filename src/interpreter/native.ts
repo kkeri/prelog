@@ -9,7 +9,7 @@ export function getNativeEnvironment (): Environment {
   const env = new Environment(success, {}, {})
   for (const name in nativeProcesses) {
     env.program = lowerMeet(env, env.program, () => new Definition(
-      new Name(name),
+      new syntax.Name(name),
       new NativeProcess(
         new syntax.Name(name),
         nativeProcesses[name]
@@ -23,7 +23,7 @@ const nativeProcesses = {
   def (env: Environment): Model {
     const name = env.next()
     if (!(name instanceof syntax.Name)) return new SyntaxError('the first argument of a definition must be a name', name)
-    const def = new Definition(new Name(name.value), evaluate(env, env.next()))
+    const def = new Definition(name, evaluate(env, env.next()))
     return resolve(env, env.program, def)
   },
 
