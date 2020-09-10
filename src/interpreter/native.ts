@@ -32,25 +32,23 @@ const nativeProcesses = {
   },
 
   '@env' (env: Environment): Model {
-    printEnvironment(env, env.outputs.stdout ?? new DummyOutputStream())
+    printEnvironment(env.program, env.outputs.stdout ?? new DummyOutputStream())
     return success
   }
 }
 
-export function printEnvironment (env: Environment, out: OutputStream) {
-  _printEnvironment(env.program, out)
-}
-
-export function _printEnvironment (m: Model, out: OutputStream) {
+export function printEnvironment (m: Model, out: OutputStream) {
   if (m instanceof And) {
-    _printEnvironment(m.a, out)
-    _printEnvironment(m.b, out)
+    printEnvironment(m.a, out)
+    printEnvironment(m.b, out)
   }
   else if (m instanceof ParentEnvironment) {
     if (m.hidden) {
       // don't print a hidden environment
     }
-    else _printEnvironment(m.model, out)
+    else {
+      printEnvironment(m.model, out)
+    }
   }
   else {
     out.write(m.reflect())
