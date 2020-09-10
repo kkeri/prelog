@@ -82,7 +82,7 @@ const evaluationRules = new UnaryDispatcher<Environment, Syntax, Model>(
     (env, t) => {
       const childEnv = inheritEnv(env)
       return t.body.reduce<Model>(
-        (m: Model, e: Syntax) => upperJoin(childEnv, m, evaluate(childEnv, e)),
+        (m: Model, e: Syntax) => upperJoin(childEnv, m, () => evaluate(childEnv, e)),
         failure,
       )
     })
@@ -90,7 +90,7 @@ const evaluationRules = new UnaryDispatcher<Environment, Syntax, Model>(
     (env, t) => t.body.reduce<Model>(
       (m: Model, e: Syntax) => {
         const childEnv = inheritEnv(env)
-        return lowerMeet(childEnv, m, evaluate(childEnv, e))
+        return lowerMeet(childEnv, m, () => evaluate(childEnv, e))
       },
       success,
     ))
@@ -107,10 +107,13 @@ const resolutionRules = new BinaryDispatcher<Environment, Model, Model, Model>(
   // default case
   (env, a, b) => b)
 
+  // structural rules
   .add(Or, null,
-    (env, a, b) => lowerMeet(env, resolve(env, a.a, b), resolve(env, a.b, b)))
+    (env, a, b) => lowerMeet(env, resolve(env, a.a, b), () => resolve(env, a.b, b)))
   .add(And, null,
-    (env, a, b) => upperJoin(env, resolve(env, a.a, b), resolve(env, a.b, b)))
+    (env, a, b) => upperJoin(env, resolve(env, a.a, b), () => resolve(env, a.b, b)))
+
+  // specific rules
   .add(Atom, Atom,
     (env, a, b) => (a === b) ? success : undef)
   .add(Definition, Definition,
@@ -124,10 +127,13 @@ const lookupRules = new BinaryDispatcher<Environment, Model, Model, Model>(
   // default case
   (env) => undef)
 
+  // structural rules
   .add(Or, null,
-    (env, a, b) => lowerMeet(env, lookup(env, a.a, b), lookup(env, a.b, b)))
+    (env, a, b) => lowerMeet(env, lookup(env, a.a, b), () => lookup(env, a.b, b)))
   .add(And, null,
-    (env, a, b) => lowerJoin(env, lookup(env, a.b, b), lookup(env, a.a, b)))
+    (env, a, b) => lowerJoin(env, lookup(env, a.b, b), () => lookup(env, a.a, b)))
+
+  // specific rules
   .add(ParentEnvironment, null,
     (env, a, b) => lookup(env, a.model, b))
   .add(Definition, Name,
@@ -138,6 +144,8 @@ const lookupRules = new BinaryDispatcher<Environment, Model, Model, Model>(
 const joinRules = new BinaryDispatcher<Environment, Model, Model, Model>(
   // default case
   (env, a, b) => a.constructor === b.constructor ? a.join(b, env) : undef)
+
+// structural rules
 
 const meetRules = new BinaryDispatcher<Environment, Model, Model, Model>(
   // default case

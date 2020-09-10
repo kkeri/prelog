@@ -18,7 +18,7 @@ export class Environment {
 
   extend (syntax: Syntax): Model {
     const model = evaluate(this, syntax)
-    this.program = lowerMeet(this, this.program, model)
+    this.program = lowerMeet(this, this.program, () => model)
     return model
   }
 

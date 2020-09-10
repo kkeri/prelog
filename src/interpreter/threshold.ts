@@ -13,16 +13,18 @@ export enum Rank {
 }
 
 export const thresholdJoin = <Ctx> (threshold: Rank, join: (ctx: Ctx, a: Model, b: Model) => Model) =>
-  (ctx: Ctx, a: Model, b: Model): Model => {
+  (ctx: Ctx, a: Model, bf: () => Model): Model => {
     if (a.rank >= threshold) return a
+    const b = bf()
     if (a.rank > b.rank) return a
     if (b.rank > a.rank) return b
     return join(ctx, a, b)
   }
 
 export const thresholdMeet = <Ctx> (threshold: Rank, meet: (ctx: Ctx, a: Model, b: Model) => Model) =>
-  (ctx: Ctx, a: Model, b: Model): Model => {
+  (ctx: Ctx, a: Model, bf: () => Model): Model => {
     if (a.rank <= threshold) return a
+    const b = bf()
     if (a.rank < b.rank) return a
     if (b.rank < a.rank) return b
     return meet(ctx, a, b)

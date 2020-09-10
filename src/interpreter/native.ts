@@ -8,13 +8,13 @@ import { And, Definition, Model, Name, NativeProcess, Process, SyntaxError, Pare
 export function getNativeEnvironment (): Environment {
   const env = new Environment(success, {}, {})
   for (const name in nativeProcesses) {
-    env.program = lowerMeet(env, env.program, (new Definition(
+    env.program = lowerMeet(env, env.program, () => new Definition(
       new Name(name),
       new NativeProcess(
         new syntax.Name(name),
         nativeProcesses[name]
       )
-    )))
+    ))
   }
   return env
 }
