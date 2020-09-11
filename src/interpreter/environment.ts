@@ -1,7 +1,7 @@
 import { Syntax } from "../syntax"
 import { InputStream, OutputStream } from "../types"
 import { Dictionary } from "../util/types"
-import { evaluate, lowerMeet } from "./interpreter"
+import { evaluate, lowerMeet, resolve } from "./interpreter"
 import { Model, ParentEnvironment } from "./model"
 
 export class Environment {
@@ -18,7 +18,7 @@ export class Environment {
 
   extend (syntax: Syntax): Model {
     const model = evaluate(this, syntax)
-    this.program = lowerMeet(this, this.program, () => model)
+    this.program = lowerMeet(this, resolve(this, this.program, model), () => model)
     return model
   }
 

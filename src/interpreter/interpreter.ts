@@ -1,12 +1,12 @@
-import { Interpreter, InputStream, OutputStream } from '../types'
 import * as syntax from "../syntax"
-import { Syntax, equalSyntax } from '../syntax'
+import { Syntax } from '../syntax'
+import { InputStream, Interpreter, OutputStream } from '../types'
 import { BinaryDispatcher, UnaryDispatcher } from '../util/dispatch'
+import { Dictionary } from '../util/types'
 import { Environment, inheritEnv } from './environment'
-import { And, Atom, Definition, Model, Name, Num, Or, SemanticsError, Str, structEqual, Sym, SyntaxError, ParentEnvironment } from './model'
+import { And, Atom, Definition, Model, Name, Num, Or, ParentEnvironment, SemanticsError, Str, structEqual, Sym, SyntaxError } from './model'
 import { getNativeEnvironment } from './native'
 import { Rank, thresholdJoin, thresholdMeet } from './threshold'
-import { Dictionary } from '../util/types'
 
 // A native, non-extendable interpreter based on resolution.
 
@@ -47,11 +47,15 @@ export function evaluate (env: Environment, syntax: Syntax): Model {
   return evaluationRules.apply(env, syntax)
 }
 
+export function derive (env: Environment, a: Model, b: Model): Model {
+  return derivationRules.apply(env, a, b)
+}
+
 export function resolve (env: Environment, a: Model, b: Model): Model {
   return resolutionRules.apply(env, a, b)
 }
 
-export function lookup (env: Environment, a: Model, b: Syntax): Model {
+export function lookup (env: Environment, a: Model, b: Name | Sym): Model {
   return lookupRules.apply(env, a, b)
 }
 
@@ -113,35 +117,23 @@ const evaluationRules = new UnaryDispatcher<Environment, Syntax, Model>(
       success,
     ))
   .add(syntax.Name,
-    (env, t) => lookup(env, env.program, t))
+    (env, t) => {
+      const name = new Name(t.value)
+      const l = lookup(env, env.program, name)
+      return l === noLookup ? name : l
+    })
   .add(syntax.Sym,
-    (env, t) => lookup(env, env.program, t))
+    (env, t) => {
+      const name = new Sym(t.value)
+      const l = lookup(env, env.program, name)
+      return l === noLookup ? name : l
+    })
   .add(syntax.Str,
     (env, t) => new Str(t.value))
   .add(syntax.Num,
     (env, t) => new Num(t.value))
 
-const resolutionRules = new BinaryDispatcher<Environment, Model, Model, Model>(
-  // default case
-  (env, a, b) => b)
-
-  // structural rules
-  .add(Or, null,
-    (env, a, b) => lowerMeet(env, resolve(env, a.a, b), () => resolve(env, a.b, b)))
-  .add(And, null,
-    (env, a, b) => upperJoin(env, resolve(env, a.a, b), () => resolve(env, a.b, b)))
-
-  // specific rules
-  .add(Atom, Atom,
-    (env, a, b) => (a === b) ? success : undef)
-  .add(Definition, Definition,
-    (env, a, b) => equalSyntax(a.a, b.a)
-      ? structEqual(a.b, b.b)
-        ? success
-        : new SemanticsError('conflicting definition', b)
-      : b)
-
-const lookupRules = new BinaryDispatcher<Environment, Model, Syntax, Model>(
+const lookupRules = new BinaryDispatcher<Environment, Model, Name | Sym, Model>(
   // default case
   (env) => noLookup)
 
@@ -154,16 +146,50 @@ const lookupRules = new BinaryDispatcher<Environment, Model, Syntax, Model>(
   // specific rules
   .add(ParentEnvironment, null,
     (env, a, b) => lookup(env, a.model, b))
-  .add(Definition, syntax.Name,
-    (env, a, b) => equalSyntax(a.a, b) ? a.b : noLookup)
-  .add(Definition, syntax.Sym,
-    (env, a, b) => equalSyntax(a.a, b) ? a.b : noLookup)
+  .add(Definition, Name,
+    (env, a, b) => structEqual(a.a, b) ? a.b : noLookup)
+  .add(Definition, Sym,
+    (env, a, b) => structEqual(a.a, b) ? a.b : noLookup)
+
+const derivationRules = new BinaryDispatcher<Environment, Model, Model, Model>(
+  // default case
+  (env, a, b) => b)
+
+  // structural rules
+  .add(Or, null,
+    (env, a, b) => lowerMeet(env, derive(env, a.a, b), () => derive(env, a.b, b)))
+  .add(And, null,
+    (env, a, b) => upperJoin(env, derive(env, a.a, b), () => derive(env, a.b, b)))
+
+  // specific rules
+  .add(Atom, Atom,
+    (env, a, b) => (a === b) ? success : undef)
+  .add(Definition, Definition,
+    (env, a, b) => a.a === b.a
+      ? structEqual(a.b, b.b)
+        ? success
+        : new SemanticsError('conflicting definition', b)
+      : b)
+
+const resolutionRules = new BinaryDispatcher<Environment, Model, Model, Model>(
+  // default case
+  (env, a, b) => a)
+
+  // structural rules
+  .add(Or, null,
+    (env, a, b) => upperJoin(env, resolve(env, a.a, b), () => resolve(env, a.b, b)))
+  .add(And, null,
+    (env, a, b) => lowerMeet(env, resolve(env, a.a, b), () => resolve(env, a.b, b)))
+
+  // specific rules
+  .add(Name, Definition,
+    (env, a, b) => structEqual(a, b.a) ? b.b : a)
+  .add(Definition, Definition,
+    (env, a, b) => new Definition(resolve(env, a.a, b.a), resolve(env, a.b, b.b)))
 
 const joinRules = new BinaryDispatcher<Environment, Model, Model, Model>(
   // default case
   (env, a, b) => a.constructor === b.constructor ? a.join(b, env) : undef)
-
-// structural rules
 
 const meetRules = new BinaryDispatcher<Environment, Model, Model, Model>(
   // default case

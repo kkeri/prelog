@@ -3,8 +3,8 @@ import * as syntax from "../syntax"
 import { OutputStream } from "../types"
 import { Dictionary } from "../util/types"
 import { Environment } from "./environment"
-import { evaluate, lowerMeet, resolve, success, truth, falsehood } from "./interpreter"
-import { And, Definition, Model, NativeProcess, ParentEnvironment, Process, SyntaxError, Atom, Num } from "./model"
+import { evaluate, lowerMeet, derive, success, truth, falsehood } from "./interpreter"
+import { And, Definition, Model, NativeProcess, ParentEnvironment, Process, SyntaxError, Atom, Num, Name } from "./model"
 import { Rank } from "./threshold"
 
 export function getNativeEnvironment (): Environment {
@@ -22,11 +22,10 @@ export function getNativeEnvironment (): Environment {
 type NativeDefinition = Model | ((env: Environment) => Model)
 
 function translateNativeDef (name: string, value: NativeDefinition): Model {
-  const n = new syntax.Name(name)
   const v = typeof value === 'function'
-    ? new NativeProcess(n, value)
+    ? new NativeProcess(new syntax.Name(name), value)
     : value
-  return new Definition(n, v)
+  return new Definition(new Name(name), v)
 }
 
 const nativeDefs: Dictionary<NativeDefinition> = {
@@ -36,8 +35,8 @@ const nativeDefs: Dictionary<NativeDefinition> = {
   def (env: Environment): Model {
     const name = env.next()
     if (!(name instanceof syntax.Name)) return new SyntaxError('the first argument of a definition must be a name', name)
-    const def = new Definition(name, evaluate(env, env.next()))
-    return resolve(env, env.program, def)
+    const def = new Definition(new Name(name.value), evaluate(env, env.next()))
+    return derive(env, env.program, def)
   },
 
   proc (env: Environment): Model {

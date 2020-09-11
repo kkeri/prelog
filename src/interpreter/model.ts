@@ -90,30 +90,30 @@ export class Definition extends Model {
   rank = Rank.Neutral
 
   constructor (
-    public a: Syntax,
+    public a: Model,
     public b: Model,
   ) { super() }
 
   structEqual (other: this): boolean {
-    return equalSyntax(this.a, other.a) && structEqual(this.b, other.b)
+    return this.a === other.a && structEqual(this.b, other.b)
   }
 
   reflect () {
     return new syntax.Sequence([
       new syntax.Name('def'),
-      this.a,
+      this.a.reflect(),
       this.b.reflect(),
     ])
   }
 
   join (other: this, env: Environment): Model {
-    return equalSyntax(this.a, other.a)
+    return this.a === other.a
       ? new Definition(this.a, join(env, this.b, other.b))
       : undef
   }
 
   meet (other: this, env: Environment): Model {
-    return equalSyntax(this.a, other.a)
+    return this.a === other.a
       ? new Definition(this.a, meet(env, this.b, other.b))
       : undef
   }
