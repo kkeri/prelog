@@ -1,9 +1,11 @@
 {
-  "name": "prelog",
+  "name": "prelog-lang",
   "private": true,
   "version": "0.0.1",
   "description": "A prelogical programming language",
-  "main": "lib/index.js",
+  "bin": {
+    "prelog": "lib/cli/prelog.js"
+  },
   "scripts": {
     "test": "make test",
     "build": "make",

@@ -13,15 +13,14 @@ import { Dictionary } from '../util/types'
 export class NativeInterpreter implements Interpreter {
   env: Environment
 
-  constructor (
-    inputs: Dictionary<InputStream>,
-    outputs: Dictionary<OutputStream>,
-    args: Syntax[] = [],
-    argIdx: number = 0,
-  ) {
+  constructor ({ inputs, outputs, args = [] }: {
+    inputs: Dictionary<InputStream>
+    outputs: Dictionary<OutputStream>
+    args?: Syntax[]
+  }) {
     const nativeEnv = getNativeEnvironment()
     const parentEnv = new ParentEnvironment(nativeEnv.program, true)
-    this.env = new Environment(parentEnv, inputs, outputs, args, argIdx)
+    this.env = new Environment(parentEnv, inputs, outputs, args)
   }
 
   extend (syntax: Syntax): Syntax {
