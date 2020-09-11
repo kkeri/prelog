@@ -1,14 +1,31 @@
+import * as colors from 'colors'
 import { createReadStream } from 'fs'
 import { createCommandProcessor } from './cmd'
 import { NativeInterpreter } from './interpreter/interpreter'
-import { repl } from './util/repl'
+import { printActions } from './print'
 import { PrintStream } from './stream'
-import * as colors from 'colors'
 import { PrettyFormatter } from './util/format'
 import { ModelPrinter } from './util/printer'
-import { printActions } from './print'
+import { repl } from './util/repl'
+import yargs = require('yargs')
+
+const MultiStream = require('multistream')
+const pkg = require('../package.json')
 
 // Command line interface
+
+const argv = yargs
+  .options({
+    'i': {
+      alias: 'interactive',
+      describe: 'interactive mode',
+      type: 'boolean'
+    },
+  })
+  .version(`prelog v${pkg.version}`)
+  .usage(`Prelog interpreter v${pkg.version}\nUsage:\n  prelog <options> filenames...`)
+  .help()
+  .argv
 
 export const styles = {
   operator: colors.cyan,
@@ -32,8 +49,8 @@ const printer = new ModelPrinter({
   styles: styles,
 })
 
-const input = process.argv[2]
-  ? createReadStream(process.argv[2])
+const input = argv?._.length
+  ? new MultiStream(argv._.map(filename => createReadStream(filename)))
   : process.stdin
 
 repl(input, process.stdout, createCommandProcessor(

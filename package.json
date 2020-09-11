@@ -18,14 +18,14 @@
   "license": "MIT",
   "dependencies": {
     "colors": "^1.4.0",
+    "multistream": "^4.0.0",
     "ohm-js": "^0.14",
     "resolve": "^1.17.0",
-    "yargs": "^15.4.1"
+    "yargs": "^16.0.3"
   },
   "devDependencies": {
     "@types/node": "^11.15.20",
     "@types/yargs": "^15.0.5",
-    "concurrently": "^4",
     "tap": "^14.10.8",
     "typescript": "^3.9.7"
   }
