@@ -32,10 +32,16 @@ export class NativeInterpreter implements Interpreter {
   }
 }
 
+// constants
+
 export const undef = new Atom(Rank.MetaFailure, new syntax.Name('undefined'))
 export const success = new Atom(Rank.Top, new syntax.Name('success'))
 export const failure = new Atom(Rank.Bottom, new syntax.Name('failure'))
+export const truth = new Atom(Rank.True, new syntax.Name('true'))
+export const falsehood = new Atom(Rank.False, new syntax.Name('false'))
 export const noLookup = new Atom(Rank.Bottom, new syntax.Name('noLookup'))
+
+// operations
 
 export function evaluate (env: Environment, syntax: Syntax): Model {
   return evaluationRules.apply(env, syntax)
@@ -58,6 +64,18 @@ export function meet (env: Environment, a: Model, b: Model): Model {
   const m = meetRules.apply(env, a, b)
   return m === undef ? new And(a, b, a.rank) : m
 }
+
+// logical connectives
+
+// Find all alternatives.
+export const upperJoin = thresholdJoin(Rank.Top, join)
+
+// Find the first alternative.
+export const lowerJoin = thresholdJoin(Rank.Bottom + 1, join)
+
+export const upperMeet = thresholdMeet(Rank.Top - 1, meet)
+
+export const lowerMeet = thresholdMeet(Rank.Bottom, meet)
 
 // Rules
 
@@ -150,13 +168,3 @@ const joinRules = new BinaryDispatcher<Environment, Model, Model, Model>(
 const meetRules = new BinaryDispatcher<Environment, Model, Model, Model>(
   // default case
   (env, a, b) => a.constructor === b.constructor ? a.meet(b, env) : undef)
-
-// Find all alternatives.
-export const upperJoin = thresholdJoin(Rank.Top, join)
-
-// Find the first alternative.
-export const lowerJoin = thresholdJoin(Rank.Bottom + 1, join)
-
-export const upperMeet = thresholdMeet(Rank.Top - 1, meet)
-
-export const lowerMeet = thresholdMeet(Rank.Bottom, meet)

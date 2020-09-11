@@ -3,7 +3,7 @@ import * as syntax from "../syntax"
 import { OutputStream } from "../types"
 import { Dictionary } from "../util/types"
 import { Environment } from "./environment"
-import { evaluate, lowerMeet, resolve, success } from "./interpreter"
+import { evaluate, lowerMeet, resolve, success, truth, falsehood } from "./interpreter"
 import { And, Definition, Model, NativeProcess, ParentEnvironment, Process, SyntaxError, Atom, Num } from "./model"
 import { Rank } from "./threshold"
 
@@ -30,8 +30,8 @@ function translateNativeDef (name: string, value: NativeDefinition): Model {
 }
 
 const nativeDefs: Dictionary<NativeDefinition> = {
-  true: new Atom(Rank.True, new syntax.Name('true')),
-  false: new Atom(Rank.False, new syntax.Name('false')),
+  true: truth,
+  false: falsehood,
 
   def (env: Environment): Model {
     const name = env.next()
