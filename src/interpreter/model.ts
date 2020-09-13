@@ -1,8 +1,9 @@
 import * as syntax from "../syntax"
 import { equalSyntax, Syntax, arrayToList } from "../syntax"
 import { Environment } from "./environment"
-import { evaluate, join, meet, undef } from "./interpreter"
+import { evaluate, join, meet } from "./interpreter"
 import { Rank } from "./threshold"
+import { undef } from "./const"
 
 export abstract class Model implements Model {
   // Plays role in operations of threshold algebra.

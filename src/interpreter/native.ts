@@ -2,10 +2,10 @@ import { DummyOutputStream } from "../stream"
 import * as syntax from "../syntax"
 import { OutputStream } from "../types"
 import { Dictionary } from "../util/types"
+import { falsehood, success, truth } from "./const"
 import { Environment } from "./environment"
-import { evaluate, lowerMeet, derive, success, truth, falsehood } from "./interpreter"
-import { And, Definition, Model, NativeProcess, ParentEnvironment, Process, SyntaxError, Atom, Num, Name } from "./model"
-import { Rank } from "./threshold"
+import { derive, evaluate, lowerMeet } from "./interpreter"
+import { And, Definition, Model, Name, NativeProcess, Num, ParentEnvironment, Process, SyntaxError } from "./model"
 
 export function getNativeEnvironment (): Environment {
   const env = new Environment(success, {}, {})

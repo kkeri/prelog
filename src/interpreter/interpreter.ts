@@ -3,6 +3,7 @@ import { Syntax } from '../syntax'
 import { InputStream, Interpreter, OutputStream } from '../types'
 import { BinaryDispatcher, UnaryDispatcher } from '../util/dispatch'
 import { Dictionary } from '../util/types'
+import { failure, noLookup, success, undef } from "./const"
 import { Environment, inheritEnv } from './environment'
 import { And, Atom, Definition, Model, Name, Num, Or, ParentEnvironment, SemanticsError, Str, structEqual, Sym, SyntaxError } from './model'
 import { getNativeEnvironment } from './native'
@@ -31,15 +32,6 @@ export class NativeInterpreter implements Interpreter {
     return this.env.program.reflect()
   }
 }
-
-// constants
-
-export const undef = new Atom(Rank.MetaFailure, new syntax.Name('undefined'))
-export const success = new Atom(Rank.Top, new syntax.Name('success'))
-export const failure = new Atom(Rank.Bottom, new syntax.Name('failure'))
-export const truth = new Atom(Rank.True, new syntax.Name('true'))
-export const falsehood = new Atom(Rank.False, new syntax.Name('false'))
-export const noLookup = new Atom(Rank.Bottom, new syntax.Name('noLookup'))
 
 // operations
 
