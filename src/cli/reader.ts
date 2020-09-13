@@ -3,9 +3,8 @@ import { parser } from "../parser"
 import { Syntax } from "../syntax"
 import { Interpreter } from "../types"
 import { Diagnostics } from "../util/diag"
-import { PrettyFormatter } from "../util/format"
-import stream = require('stream')
 import { ModelPrinter } from '../util/printer'
+import stream = require('stream')
 
 export type CreateReader = (interpret: Syntax) => void
 
@@ -28,6 +27,7 @@ export function createLineReader (opts: {
 
   rl.on('line', (line) => {
     try {
+      if (line.trim() === '') return
       const diag = new Diagnostics()
       const term = parser.parse(line, { diag, rule: 'Term' })
       if (term) {
