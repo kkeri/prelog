@@ -13,10 +13,10 @@ import { Rank, thresholdJoin, thresholdMeet } from './threshold'
 export class NativeInterpreter implements Interpreter {
   env: Environment
 
-  constructor ({ inputs, outputs, args = [] }: {
+  constructor ({ inputs, outputs, args = new syntax.EmptyList() }: {
     inputs: Dictionary<InputStream>
     outputs: Dictionary<OutputStream>
-    args?: Syntax[]
+    args?: syntax.List
   }) {
     const nativeEnv = getNativeEnvironment()
     const parentEnv = new ParentEnvironment(nativeEnv.program, true)
@@ -90,9 +90,7 @@ const evaluationRules = new UnaryDispatcher<Environment, Syntax, Model>(
   .add(syntax.Sequence,
     (env, t) => {
       try {
-        const childEnv = inheritEnv(env)
-        childEnv.args = t.body
-        childEnv.argIdx = 0
+        const childEnv = inheritEnv(env, t.body)
         const head = evaluate(env, childEnv.next())
         return head.invoke(childEnv)
       }
@@ -102,20 +100,28 @@ const evaluationRules = new UnaryDispatcher<Environment, Syntax, Model>(
     })
   .add(syntax.Brackets,
     (env, t) => {
-      const childEnv = inheritEnv(env)
-      return t.body.reduce<Model>(
-        (m: Model, e: Syntax) => upperJoin(childEnv, m, () => evaluate(childEnv, e)),
-        failure,
-      )
+      let args = t.body
+      let program: Model = failure
+      while (args instanceof syntax.Cons) {
+        const arg = args.next
+        const childEnv = inheritEnv(env)
+        program = upperJoin(childEnv, program, () => evaluate(childEnv, arg))
+        args = args.rest
+      }
+      return program
     })
   .add(syntax.Braces,
-    (env, t) => t.body.reduce<Model>(
-      (m: Model, e: Syntax) => {
-        const childEnv = inheritEnv(env)
-        return lowerMeet(childEnv, m, () => evaluate(childEnv, e))
-      },
-      success,
-    ))
+    (env, t) => {
+      const childEnv = inheritEnv(env)
+      let args = t.body
+      let program: Model = success
+      while (args instanceof syntax.Cons) {
+        const arg = args.next
+        program = lowerMeet(childEnv, program, () => evaluate(childEnv, arg))
+        args = args.rest
+      }
+      return program
+    })
   .add(syntax.Name,
     (env, t) => {
       const name = new Name(t.value)

@@ -1,5 +1,5 @@
 import * as syntax from "../syntax"
-import { equalSyntax, Syntax } from "../syntax"
+import { equalSyntax, Syntax, arrayToList } from "../syntax"
 import { Environment } from "./environment"
 import { evaluate, join, meet, undef } from "./interpreter"
 import { Rank } from "./threshold"
@@ -46,7 +46,7 @@ export class Or extends Model implements Model {
 
   reflect () {
     const children = Array.from(this)
-    return new syntax.Brackets(children.map(m => m.reflect()))
+    return new syntax.Brackets(arrayToList(children.map(m => m.reflect())))
   }
 
   *[Symbol.iterator] (): IterableIterator<Model> {
@@ -73,7 +73,7 @@ export class And extends Model implements Model {
 
   reflect () {
     const children = Array.from(this)
-    return new syntax.Braces(children.map(m => m.reflect()))
+    return new syntax.Braces(arrayToList(children.map(m => m.reflect())))
   }
 
   *[Symbol.iterator] (): IterableIterator<Model> {
@@ -99,11 +99,11 @@ export class Definition extends Model {
   }
 
   reflect () {
-    return new syntax.Sequence([
+    return new syntax.Sequence(arrayToList([
       new syntax.Name('def'),
       this.a.reflect(),
       this.b.reflect(),
-    ])
+    ]))
   }
 
   join (other: this, env: Environment): Model {
@@ -131,10 +131,10 @@ export class Process extends Model {
   }
 
   reflect () {
-    return new syntax.Sequence([
+    return new syntax.Sequence(arrayToList([
       new syntax.Name('proc'),
       this.body,
-    ])
+    ]))
   }
 
   invoke (env: Environment): Model {
@@ -218,11 +218,11 @@ export class SyntaxError extends Model {
   }
 
   reflect () {
-    return new syntax.Sequence([
+    return new syntax.Sequence(arrayToList([
       new syntax.Name('error'),
       new syntax.Str(this.descr),
       this.syntax,
-    ])
+    ]))
   }
 }
 
@@ -239,13 +239,35 @@ export class SemanticsError extends Model {
   }
 
   reflect () {
-    return new syntax.Sequence([
+    return new syntax.Sequence(arrayToList([
       new syntax.Name('error'),
       new syntax.Str(this.descr),
       this.model.reflect(),
-    ])
+    ]))
   }
 }
+
+// export type List = Cons | EmptyList
+
+// export class Cons extends Model {
+//   constructor (
+//     public next: Model,
+//     public rest: List,
+//   ) { super() }
+
+//   structEqual (other: this): boolean {
+//     return structEqual(this.next, other.next) && structEqual(this.rest, other.rest)
+//   }
+// }
+
+// export class EmptyList extends Model {
+//   constructor (
+//   ) { super() }
+
+//   structEqual (other: this): boolean {
+//     return true
+//   }
+// }
 
 
 // leaf Models

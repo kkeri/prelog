@@ -1,48 +1,70 @@
 
 export class Syntax {
   // Returns true if two syntax trees of the same type are structurally equal.
-  structEqual (other: this): boolean {
+  equalSyntax (other: this): boolean {
     return this === other
   }
 }
 
 export class Sequence extends Syntax {
   constructor (
-    public body: Syntax[],
+    public body: List,
   ) { super() }
 
-  structEqual (other: this): boolean {
-    return equalArrays(this.body, other.body)
+  equalSyntax (other: this): boolean {
+    return equalSyntax(this.body, other.body)
   }
 }
 
 export class Brackets extends Syntax {
   constructor (
-    public body: Syntax[],
+    public body: List,
   ) { super() }
 
-  structEqual (other: this): boolean {
-    return equalArrays(this.body, other.body)
+  equalSyntax (other: this): boolean {
+    return equalSyntax(this.body, other.body)
   }
 }
 
 export class Braces extends Syntax {
   constructor (
-    public body: Syntax[],
+    public body: List,
   ) { super() }
 
-  structEqual (other: this): boolean {
-    return equalArrays(this.body, other.body)
+  equalSyntax (other: this): boolean {
+    return equalSyntax(this.body, other.body)
   }
 }
 
 export class Parentheses extends Syntax {
   constructor (
-    public body: Syntax[],
+    public body: List,
   ) { super() }
 
-  structEqual (other: this): boolean {
-    return equalArrays(this.body, other.body)
+  equalSyntax (other: this): boolean {
+    return equalSyntax(this.body, other.body)
+  }
+}
+
+export type List = Cons | EmptyList
+
+export class Cons extends Syntax {
+  constructor (
+    public next: Syntax,
+    public rest: List,
+  ) { super() }
+
+  equalSyntax (other: this): boolean {
+    return equalSyntax(this.next, other.next) && equalSyntax(this.rest, other.rest)
+  }
+}
+
+export class EmptyList extends Syntax {
+  constructor (
+  ) { super() }
+
+  equalSyntax (other: this): boolean {
+    return true
   }
 }
 
@@ -53,7 +75,7 @@ export class Name extends Syntax {
     public value: string,
   ) { super() }
 
-  structEqual (other: this): boolean {
+  equalSyntax (other: this): boolean {
     return this.value === other.value
   }
 }
@@ -63,7 +85,7 @@ export class Sym extends Syntax {
     public value: string,
   ) { super() }
 
-  structEqual (other: this): boolean {
+  equalSyntax (other: this): boolean {
     return this.value === other.value
   }
 }
@@ -73,7 +95,7 @@ export class Str extends Syntax {
     public value: string,
   ) { super() }
 
-  structEqual (other: this): boolean {
+  equalSyntax (other: this): boolean {
     return this.value === other.value
   }
 }
@@ -83,21 +105,29 @@ export class Num extends Syntax {
     public value: number,
   ) { super() }
 
-  structEqual (other: this): boolean {
+  equalSyntax (other: this): boolean {
     return this.value === other.value
   }
 }
 
-// helpers
-
 export function equalSyntax (a: Syntax, b: Syntax): boolean {
-  return a === b || (a.constructor === b.constructor && a.structEqual(b))
+  return a === b || (a.constructor === b.constructor && a.equalSyntax(b))
 }
 
-function equalArrays (a: Syntax[], b: Syntax[]): boolean {
-  if (a.length !== b.length) return false
-  for (let i = 0; i < a.length; i++) {
-    if (!a[i].structEqual(b[i])) return false
+// helpers
+
+export function arrayToList (items: Syntax[]): List {
+  return items.reduceRight(
+    (rest, next) => new Cons(next, rest),
+    new EmptyList,
+  )
+}
+
+export function listToArray (list: List): Syntax[] {
+  const arr: Syntax[] = []
+  while (!(list instanceof EmptyList)) {
+    arr.push(list.next)
+    list = list.rest
   }
-  return true
+  return arr
 }
