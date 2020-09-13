@@ -1,5 +1,4 @@
 import { Syntax } from "./syntax"
-import { Model } from "./interpreter/model";
 
 export interface Interpreter {
   // Extends the object program with a new syntax.
@@ -17,5 +16,5 @@ export interface InputStream {
 }
 
 export interface OutputStream {
-  write (term: Syntax): Model
+  write (term: Syntax): void
 }

@@ -1,7 +1,5 @@
-import { InputStream, OutputStream } from "./types"
 import { Syntax } from "./syntax"
-import { success } from "./interpreter/interpreter"
-import { WriteStream } from "fs"
+import { OutputStream } from "./types"
 import { ModelPrinter } from "./util/printer"
 
 // export class StaticInputStream implements InputStream {
@@ -50,7 +48,6 @@ export class DummyOutputStream implements OutputStream {
   ) { }
 
   write () {
-    return success
   }
 }
 
@@ -61,6 +58,5 @@ export class PrintStream implements OutputStream {
 
   write (term: Syntax) {
     this.printer.print(term).br()
-    return success
   }
 }
