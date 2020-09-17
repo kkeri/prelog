@@ -1,9 +1,7 @@
 import * as syntax from "../syntax"
-import { equalSyntax, Syntax, arrayToList } from "../syntax"
-import { Environment } from "./environment"
-import { evaluate, join, meet } from "./interpreter"
+import { arrayToList, equalSyntax, Syntax } from "../syntax"
+import { Environment, meet, join, evaluate } from "./environment"
 import { Rank } from "./threshold"
-import { undef } from "./const"
 
 export abstract class Model implements Model {
   // Plays role in operations of threshold algebra.
@@ -24,12 +22,12 @@ export abstract class Model implements Model {
     throw new Error(`Method 'reflect' is not implemented on ${this.constructor.name}`)
   }
 
-  join (other: this, env: Environment): Model {
-    return undef
+  join (other: this, env: Environment): Model | null {
+    return null
   }
 
-  meet (other: this, env: Environment): Model {
-    return undef
+  meet (other: this, env: Environment): Model | null {
+    return null
   }
 }
 
@@ -93,6 +91,7 @@ export class Definition extends Model {
   constructor (
     public a: Model,
     public b: Model,
+    public native?: boolean
   ) { super() }
 
   structEqual (other: this): boolean {
@@ -101,22 +100,22 @@ export class Definition extends Model {
 
   reflect () {
     return new syntax.Sequence(arrayToList([
-      new syntax.Name('def'),
+      new syntax.Sym('def'),
       this.a.reflect(),
       this.b.reflect(),
     ]))
   }
 
-  join (other: this, env: Environment): Model {
+  join (other: this, env: Environment) {
     return this.a === other.a
       ? new Definition(this.a, join(env, this.b, other.b))
-      : undef
+      : null
   }
 
-  meet (other: this, env: Environment): Model {
+  meet (other: this, env: Environment) {
     return this.a === other.a
       ? new Definition(this.a, meet(env, this.b, other.b))
-      : undef
+      : null
   }
 }
 
@@ -133,7 +132,7 @@ export class Process extends Model {
 
   reflect () {
     return new syntax.Sequence(arrayToList([
-      new syntax.Name('proc'),
+      new syntax.Sym('proc'),
       this.body,
     ]))
   }
@@ -142,12 +141,12 @@ export class Process extends Model {
     return evaluate(env, this.body)
   }
 
-  join (other: this): Model {
-    return equalSyntax(this.body, other.body) ? this : undef
+  join (other: this) {
+    return equalSyntax(this.body, other.body) ? this : null
   }
 
-  meet (other: this): Model {
-    return equalSyntax(this.body, other.body) ? this : undef
+  meet (other: this) {
+    return equalSyntax(this.body, other.body) ? this : null
   }
 }
 
@@ -155,7 +154,7 @@ export class NativeProcess extends Model {
   rank = Rank.Neutral
 
   constructor (
-    public syntax: Syntax,
+    public name: Model,
     public invokeFn: (env: Environment) => Model,
   ) { super() }
 
@@ -164,49 +163,49 @@ export class NativeProcess extends Model {
   }
 
   reflect () {
-    return this.syntax
+    return this.name.reflect()
   }
 
   invoke (env: Environment): Model {
     return this.invokeFn(env)
   }
 
-  join (other: this): Model {
-    return this === other ? this : undef
+  join (other: this) {
+    return this === other ? this : null
   }
 
-  meet (other: this): Model {
-    return this === other ? this : undef
-  }
-}
-
-// Marks the starting point of the parent environment in the program.
-export class ParentEnvironment extends Model {
-  rank = Rank.Neutral
-
-  constructor (
-    public model: Model,
-    public hidden?: boolean,
-  ) { super() }
-
-  structEqual (other: this): boolean {
-    return this.model === other.model
-  }
-
-  reflect () {
-    return this.model.reflect()
-  }
-
-  join (other: this): Model {
-    return this === other ? this : undef
-  }
-
-  meet (other: this): Model {
-    return this === other ? this : undef
+  meet (other: this) {
+    return this === other ? this : null
   }
 }
 
-export class SyntaxError extends Model {
+// // Marks the starting point of the parent environment in the program.
+// export class ParentEnvironment extends Model {
+//   rank = Rank.Neutral
+
+//   constructor (
+//     public model: Model,
+//     public hidden?: boolean,
+//   ) { super() }
+
+//   structEqual (other: this): boolean {
+//     return this.model === other.model
+//   }
+
+//   reflect () {
+//     return this.model.reflect()
+//   }
+
+//   join (other: this) {
+//     return this === other ? this : null
+//   }
+
+//   meet (other: this) {
+//     return this === other ? this : null
+//   }
+// }
+
+export class SyntaxErr extends Model {
   rank = Rank.Bottom
 
   constructor (
@@ -220,14 +219,14 @@ export class SyntaxError extends Model {
 
   reflect () {
     return new syntax.Sequence(arrayToList([
-      new syntax.Name('error'),
+      new syntax.Sym('error'),
       new syntax.Str(this.descr),
       this.syntax,
     ]))
   }
 }
 
-export class SemanticsError extends Model {
+export class SemanticsErr extends Model {
   rank = Rank.Bottom
 
   constructor (
@@ -241,62 +240,16 @@ export class SemanticsError extends Model {
 
   reflect () {
     return new syntax.Sequence(arrayToList([
-      new syntax.Name('error'),
+      new syntax.Sym('error'),
       new syntax.Str(this.descr),
       this.model.reflect(),
     ]))
   }
 }
 
-// export type List = Cons | EmptyList
-
-// export class Cons extends Model {
-//   constructor (
-//     public next: Model,
-//     public rest: List,
-//   ) { super() }
-
-//   structEqual (other: this): boolean {
-//     return structEqual(this.next, other.next) && structEqual(this.rest, other.rest)
-//   }
-// }
-
-// export class EmptyList extends Model {
-//   constructor (
-//   ) { super() }
-
-//   structEqual (other: this): boolean {
-//     return true
-//   }
-// }
-
 
 // leaf Models
 
-
-export class Name extends Model {
-  rank = Rank.Neutral
-
-  constructor (
-    public value: string,
-  ) { super() }
-
-  structEqual (other: this): boolean {
-    return this.value === other.value
-  }
-
-  reflect () {
-    return new syntax.Name(this.value)
-  }
-
-  join (other: this): Model {
-    return this.value === other.value ? this : undef
-  }
-
-  meet (other: this): Model {
-    return this.value === other.value ? this : undef
-  }
-}
 
 export class Sym extends Model {
   rank = Rank.Neutral
@@ -313,12 +266,12 @@ export class Sym extends Model {
     return new syntax.Sym(this.value)
   }
 
-  join (other: this): Model {
-    return this.value === other.value ? this : undef
+  join (other: this) {
+    return this.value === other.value ? this : null
   }
 
-  meet (other: this): Model {
-    return this.value === other.value ? this : undef
+  meet (other: this) {
+    return this.value === other.value ? this : null
   }
 }
 
@@ -337,12 +290,12 @@ export class Str extends Model {
     return new syntax.Str(this.value)
   }
 
-  join (other: this): Model {
-    return this.value === other.value ? this : undef
+  join (other: this) {
+    return this.value === other.value ? this : null
   }
 
-  meet (other: this): Model {
-    return this.value === other.value ? this : undef
+  meet (other: this) {
+    return this.value === other.value ? this : null
   }
 }
 
@@ -361,12 +314,12 @@ export class Num extends Model {
     return new syntax.Num(this.value)
   }
 
-  join (other: this): Model {
-    return this.value === other.value ? this : undef
+  join (other: this) {
+    return this.value === other.value ? this : null
   }
 
-  meet (other: this): Model {
-    return this.value === other.value ? this : undef
+  meet (other: this) {
+    return this.value === other.value ? this : null
   }
 }
 
@@ -375,7 +328,7 @@ export class Atom extends Model {
 
   constructor (
     public rank: Rank = Rank.Neutral,
-    public syntax?: Syntax
+    public syntax: Syntax
   ) { super() }
 
   structEqual (other: this): boolean {
@@ -383,15 +336,15 @@ export class Atom extends Model {
   }
 
   reflect () {
-    return this.syntax ?? new syntax.Name('atom')
+    return this.syntax ?? new syntax.Sym('atom')
   }
 
-  join (other: this): Model {
-    return this === other ? this : undef
+  join (other: this) {
+    return this === other ? this : null
   }
 
-  meet (other: this): Model {
-    return this === other ? this : undef
+  meet (other: this) {
+    return this === other ? this : null
   }
 }
 

@@ -2,6 +2,7 @@ import * as colors from 'colors'
 import { createReadStream } from 'fs'
 import * as readline from 'readline'
 import { NativeInterpreter } from '../interpreter/interpreter'
+import { stdSemantics } from '../interpreter/semantics'
 import { parser } from '../parser'
 import { printActions } from '../print'
 import { PrintStream } from '../stream'
@@ -59,6 +60,7 @@ const inputIsTTY = input === process.stdin && process.stdin.isTTY
 const outputIsTTy = output === process.stdout && process.stdout.isTTY
 
 const interpreter = new NativeInterpreter({
+  sem: stdSemantics,
   inputs: {},
   outputs: { stdout: new PrintStream(printer) },
 })
