@@ -5,13 +5,7 @@ import { OhmParser } from './util/ohmParser'
 export const parser = new OhmParser(join(__dirname, '../lib/recipe.js'), {
 
   Sequence (body) {
-    const elements = body.model()
-    if (elements instanceof Cons && elements.rest instanceof EmptyList) {
-      return elements.next
-    }
-    else {
-      return new Sequence(elements)
-    }
+    return new Sequence(body.model())
   },
   Parentheses_full (_lb_, body, _comma_, _rb_) {
     const elements = body.model()
