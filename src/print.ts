@@ -45,10 +45,6 @@ export const printActions = new ActionMap().addClasses(syntax, {
 
   // leaves
 
-  Name (printer) {
-    printer.id(this.value)
-  },
-
   Sym (printer) {
     printer.id(this.value)
   },

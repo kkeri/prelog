@@ -70,16 +70,6 @@ export class EmptyList extends Syntax {
 
 // leaf nodes
 
-export class Name extends Syntax {
-  constructor (
-    public value: string,
-  ) { super() }
-
-  equalSyntax (other: this): boolean {
-    return this.value === other.value
-  }
-}
-
 export class Sym extends Syntax {
   constructor (
     public value: string,

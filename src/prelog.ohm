@@ -8,8 +8,7 @@ Prelog {
 		| Parentheses
 		| Brackets
 		| Braces
-		| identifier
-		| symbol
+		| Symbol
 		| number
 		| string
 
@@ -24,6 +23,10 @@ Prelog {
 	Braces =
 		| "{" NonemptyListOf<Term, #semicolon> #semicolon? "}" -- full
 		| "{" "}" -- empty
+
+	Symbol =
+		| identifier
+		| operator
 
 	// lexer
 
@@ -47,8 +50,8 @@ Prelog {
 	identifierStart = "A".."Z" | "a".."z" | "_" | "@"
 	identifierPart = identifierStart | digit
 
-	symbol = symbolChar+
-	symbolChar =
+	operator = operatorChar+
+	operatorChar =
 		| "+" | "-" | "*" | "/" | "%" | "^"
 		| "=" | "<" | ">"
 		| "#" | "&" | "|" | "§" | "?" | "!" | "×"
@@ -60,13 +63,9 @@ Prelog {
 	exponentPart = ("e" | "E") ("+" | "-")? digit+
 	nonZeroDigit = "1".."9"
 
-	string = singleQuotedString | doubleQuotedString
-	singleQuotedString = "\'" sqStringCharacter* "\'"
-	sqStringCharacter = sqNormalChar | escapeSequence
-	sqNormalChar = ~("\'" | "\\" | "\u0000".."\u001f") any
-	doubleQuotedString = "\"" dqStringCharacter* "\""
-	dqStringCharacter = dqNormalChar | escapeSequence
-	dqNormalChar = ~("\"" | "\\" | "\u0000".."\u001f") any
+	string = "\"" stringCharacter* "\""
+	stringCharacter = normalChar | escapeSequence
+	normalChar = ~("\"" | "\\" | "\u0000".."\u001f") any
 	escapeSequence = "\\" escapeSpec
 	escapeSpec =
 		| "\""

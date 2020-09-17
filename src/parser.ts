@@ -1,6 +1,6 @@
 import { join } from 'path'
+import { Braces, Brackets, Cons, EmptyList, List, Num, Parentheses, Sequence, Str, Sym } from './syntax'
 import { OhmParser } from './util/ohmParser'
-import { Sequence, Parentheses, EmptyList, Brackets, Braces, Name, Sym, Num, Str, Cons, List } from './syntax'
 
 export const parser = new OhmParser(join(__dirname, '../lib/recipe.js'), {
 
@@ -37,22 +37,16 @@ export const parser = new OhmParser(join(__dirname, '../lib/recipe.js'), {
   Braces_empty (_lb_, _rb_) {
     return new Braces(new EmptyList())
   },
+  Symbol (sym) {
+    return new Sym(this.source.contents)
+  },
 
   // lexer
 
-  identifier (start, part) {
-    return new Name(this.source.contents)
-  },
-  symbol (chars) {
-    return new Sym(this.source.contents)
-  },
   number (sign, nat, _point_, frac, exp) {
     return new Num(parseFloat(this.source.contents))
   },
-  singleQuotedString (quote1, chars, quote2) {
-    return new Str(chars.source.contents)
-  },
-  doubleQuotedString (quote1, chars, quote2) {
+  string (quote1, chars, quote2) {
     return new Str(chars.source.contents)
   },
 
