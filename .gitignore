@@ -73,3 +73,7 @@ lib
 # tap coverage reports
 
 -cov
+
+# local notes
+
+*-local*
