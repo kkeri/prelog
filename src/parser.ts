@@ -8,13 +8,7 @@ export const parser = new OhmParser(join(__dirname, '../lib/recipe.js'), {
     return new Sequence(body.model())
   },
   Parentheses_full (_lb_, body, _comma_, _rb_) {
-    const elements = body.model()
-    if (elements instanceof Cons && elements.rest instanceof EmptyList) {
-      return elements.next
-    }
-    else {
-      return new Parentheses(elements)
-    }
+    return new Parentheses(body.model())
   },
   Parentheses_empty (_lb_, _rb_) {
     return new Parentheses(new EmptyList())

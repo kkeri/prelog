@@ -34,6 +34,16 @@ export const stdSemantics = {
           return new SyntaxErr(e.message, t)
         }
       })
+    .add(syntax.Parentheses,
+      (env, t) => {
+        const list = t.body
+        if (list instanceof syntax.Cons && list.rest instanceof syntax.EmptyList) {
+          return evaluate(env, list.next)
+        }
+        else {
+          return null
+        }
+      })
     .add(syntax.Brackets,
       (env, t) => {
         let args = t.body
