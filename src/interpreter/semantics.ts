@@ -48,15 +48,9 @@ export const stdSemantics = {
       })
     .add(syntax.Braces,
       (env, t) => {
-        const childEnv = inheritEnv(env)
-        let args = t.body
-        let program: Model = success
-        while (args instanceof syntax.Cons) {
-          const arg = args.next
-          program = lowerMeet(childEnv, program, () => evaluate(childEnv, arg))
-          args = args.rest
-        }
-        return program
+        const childEnv = inheritEnv(env, t.body)
+        while (childEnv.peek()) childEnv.extend(childEnv.next())
+        return childEnv.current()
       })
     .add(syntax.Sym,
       (env, t) => {
