@@ -1,7 +1,7 @@
 import * as readline from 'readline'
-import { parser } from "../parser"
-import { Syntax } from "../syntax"
-import { Interpreter } from "../types"
+import { parser } from "../core/parser"
+import { Syntax } from "../core/syntax"
+import { Interpreter } from "../core/types"
 import { Diagnostics } from "../util/diag"
 import { ModelPrinter } from '../util/printer'
 import stream = require('stream')
@@ -31,7 +31,7 @@ export function createLineReader (opts: {
       const diag = new Diagnostics()
       const term = parser.parse(line, { diag, rule: 'Term' })
       if (term) {
-        const result = opts.interpreter.extend(term)
+        const result = opts.interpreter.interpret(term)
       }
       else if (opts.stderr) {
         for (const msg of diag.messages) {
