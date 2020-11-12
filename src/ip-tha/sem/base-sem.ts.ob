@@ -1,0 +1,151 @@
+import * as syntax from "../../core/syntax"
+import { Syntax } from "../../core/types"
+import { BinaryDispatcher, UnaryDispatcher } from "../../util/dispatch"
+import { success, undef } from "../const"
+import { derive, evaluate, Interpreter, lookup, resolve, Semantics } from "../interpreter"
+import { Model, structEqual } from "../model/base-model"
+import { And, Or, SyntaxErr } from "../model/comp-model"
+import { Num, Str, Sym } from "../model/prim-model"
+import { BlockSyntaxReader } from "../reader"
+import { lowerJoin, lowerMeet, signatures, upperJoin } from "../threshold"
+
+let baseSemantics: Semantics | undefined
+
+export function getBaseSemantics () {
+  if (!baseSemantics) baseSemantics = initBaseSemantics()
+  return baseSemantics
+}
+
+function initBaseSemantics (): Semantics {
+  return {
+    evaluationRules: new UnaryDispatcher<Interpreter, Syntax, Model, BlockSyntaxReader>(
+      // default case
+      (ip, t) => new SyntaxErr('cannot interpret syntax', t))
+
+      // apply the first term to the rest of the input recursively
+      .add(syntax.Cons,
+        (ip, t, args) => {
+          const head = evaluate(ip, args)
+          return head.apply(ip, args)
+        })
+
+      .add(syntax.Nil,
+        (ip, t) => ip.sgn.unit)
+
+      // reset precedence level - accepts exactly one term inside ()
+      .add(syntax.Parentheses,
+        (ip, t) => {
+          const reader = new BlockSyntaxReader(t.body)
+          if (!reader.hasNext()) return null
+          const value = evaluate(ip, reader)
+          if (reader.hasNext()) {
+            return new SyntaxErr(`')' expected`, reader.read())
+          }
+          return value
+        })
+
+      // disjunction
+      .add(syntax.Brackets,
+        (ip, t) => {
+          const sgn = signatures.uj
+          const childIp: Interpreter = {
+            ...ip,
+            sgn,
+            program: sgn.unit,
+          }
+          const reader = new BlockSyntaxReader(t.body)
+          while (!sgn.saturated(childIp.program) && reader.hasNext()) {
+            // todo: fork the writer for each alternatives
+            const valueP = evaluate(ip, reader)
+            const value = derive(childIp, childIp.program, valueP)
+            const ante = resolve(childIp, childIp.program, value)
+            childIp.program = childIp.sgn.append(childIp, ante, () => value)
+          }
+          return childIp.program
+        })
+
+      // conjunction
+      .add(syntax.Braces,
+        (ip, t) => {
+          const sgn = signatures.lm
+          const childIp: Interpreter = {
+            ...ip,
+            sgn,
+            program: sgn.unit,
+          }
+          const reader = new BlockSyntaxReader(t.body)
+          while (!sgn.saturated(childIp.program) && reader.hasNext()) {
+            const valueP = evaluate(ip, reader)
+            const value = derive(childIp, childIp.program, valueP)
+            const ante = resolve(childIp, childIp.program, value)
+            childIp.program = childIp.sgn.append(childIp, ante, () => value)
+          }
+          return childIp.program
+        })
+
+      .add(syntax.Sym,
+        (ip, t) => {
+          const sym = new Sym(t.value)
+          const def = lookup(ip, ip.program, sym)
+          return derive(ip, ip.program, sym)
+        })
+      .add(syntax.Str,
+        (ip, t) => new Str(t.value))
+      .add(syntax.Num,
+        (ip, t) => new Num(t.value))
+    ,
+
+    lookupRules: new BinaryDispatcher<Interpreter, Model, Sym, Model>(
+      // default case
+      (ip) => undef)
+
+      // structural rules
+      .add(Or, null,
+        (ip, a, b) => upperJoin(ip, lookup(ip, a.a, b), () => lookup(ip, a.b, b)))
+      .add(And, null,
+        (ip, a, b) => lowerJoin(ip, lookup(ip, a.b, b), () => lookup(ip, a.a, b)))
+    ,
+
+    proactiveRules: new BinaryDispatcher<Interpreter, Model, Model, Model>(
+      // default case
+      (ip, a, b) => structEqual(a, b) ? ip.sgn.unit : b)
+
+      // structural rules
+      .add(Or, null,
+        (ip, a, b) => lowerMeet(ip, derive(ip, a.a, b), () => derive(ip, a.b, b)))
+      .add(And, null,
+        (ip, a, b) => upperJoin(ip, derive(ip, a.b, b), () => derive(ip, a.a, b)))
+      .add(null, Or,
+        (ip, a, b) => upperJoin(ip, derive(ip, a, b.a), () => derive(ip, a, b.b)))
+      .add(null, And,
+        (ip, a, b) => lowerMeet(ip, derive(ip, a, b.a), () => derive(ip, a, b.b)))
+    ,
+
+    retroactiveRules: new BinaryDispatcher<Interpreter, Model, Model, Model>(
+      // default case
+      (ip, a, b) => structEqual(a, b) ? ip.sgn.unit : a)
+
+      // structural rules
+      .add(Or, null,
+        (ip, a, b) => upperJoin(ip, resolve(ip, a.a, b), () => resolve(ip, a.b, b)))
+      .add(And, null,
+        (ip, a, b) => lowerMeet(ip, resolve(ip, a.a, b), () => resolve(ip, a.b, b)))
+      .add(null, Or,
+        (ip, a, b) => lowerMeet(ip, resolve(ip, a, b.a), () => resolve(ip, a, b.b)))
+      .add(null, And,
+        (ip, a, b) => upperJoin(ip, resolve(ip, a, b.a), () => resolve(ip, a, b.b)))
+    ,
+
+    joinRules: new BinaryDispatcher<Interpreter, Model, Model, Model>(
+      // default case
+      (ip, a, b) => a.constructor === b.constructor && a.join(b, ip)
+        || new Or(a, b, a.rank))
+    ,
+
+    meetRules: new BinaryDispatcher<Interpreter, Model, Model, Model>(
+      // default case
+      (ip, a, b) => a.constructor === b.constructor && a.meet(b, ip)
+        || new And(a, b, a.rank))
+  }
+}
+

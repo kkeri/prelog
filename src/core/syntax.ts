@@ -1,122 +1,123 @@
+import { Syntax } from "./types"
 
-export class Syntax {
-  // Returns true if two syntax trees of the same type are structurally equal.
-  equalSyntax (other: this): boolean {
-    return this === other
-  }
-}
-
-export class Sequence extends Syntax {
+export class Brackets implements Syntax {
   constructor (
     public body: List,
-  ) { super() }
+  ) { }
 
   equalSyntax (other: this): boolean {
     return equalSyntax(this.body, other.body)
   }
 }
 
-export class Brackets extends Syntax {
+export class Braces implements Syntax {
   constructor (
     public body: List,
-  ) { super() }
+  ) { }
 
   equalSyntax (other: this): boolean {
     return equalSyntax(this.body, other.body)
   }
 }
 
-export class Braces extends Syntax {
+export class Parentheses implements Syntax {
   constructor (
     public body: List,
-  ) { super() }
+  ) { }
 
   equalSyntax (other: this): boolean {
     return equalSyntax(this.body, other.body)
   }
 }
 
-export class Parentheses extends Syntax {
+export type List = Cons | Nil
+
+export class Cons implements Syntax {
   constructor (
-    public body: List,
-  ) { super() }
-
-  equalSyntax (other: this): boolean {
-    return equalSyntax(this.body, other.body)
-  }
-}
-
-export type List = Cons | EmptyList
-
-export class Cons extends Syntax {
-  constructor (
-    public next: Syntax,
+    public first: Syntax,
     public rest: List,
-  ) { super() }
+  ) { }
 
   equalSyntax (other: this): boolean {
-    return equalSyntax(this.next, other.next) && equalSyntax(this.rest, other.rest)
+    return equalSyntax(this.first, other.first) && equalSyntax(this.rest, other.rest)
   }
 }
 
-export class EmptyList extends Syntax {
+export class Nil implements Syntax {
   constructor (
-  ) { super() }
+  ) { }
 
   equalSyntax (other: this): boolean {
     return true
   }
 }
 
+export function isList (term: Syntax): term is List {
+  return term instanceof Cons || term instanceof Nil
+}
+
+export class SyntaxErr implements Syntax {
+  constructor (
+    public descr: string,
+    public syntax: Syntax,
+  ) { }
+
+  equalSyntax (other: this): boolean {
+    return this.descr === other.descr && equalSyntax(this.syntax, other.syntax)
+  }
+}
+
 // leaf nodes
 
-export class Sym extends Syntax {
+export class Sym implements Syntax {
   constructor (
     public value: string,
-  ) { super() }
+  ) { }
 
   equalSyntax (other: this): boolean {
     return this.value === other.value
   }
 }
 
-export class Str extends Syntax {
+export class Str implements Syntax {
   constructor (
     public value: string,
-  ) { super() }
+  ) { }
 
   equalSyntax (other: this): boolean {
     return this.value === other.value
   }
 }
 
-export class Num extends Syntax {
+export class Num implements Syntax {
   constructor (
     public value: number,
-  ) { super() }
+  ) { }
 
   equalSyntax (other: this): boolean {
     return this.value === other.value
   }
 }
+
+// helpers
+
+export const nil = new Nil()
 
 export function equalSyntax (a: Syntax, b: Syntax): boolean {
   return a === b || (a.constructor === b.constructor && a.equalSyntax(b))
 }
 
-// helpers
-
 export function arrayToList (items: Syntax[]): List {
   return items.reduceRight(
     (rest, next) => new Cons(next, rest),
-    new EmptyList,
+    nil,
   )
 }
 
 export function listToArray (list: List): Syntax[] {
   const arr: Syntax[] = []
-  while (!(list instanceof EmptyList)) {
-    arr.push(list.next)
+  while (!(list instanceof Nil)) {
+    arr.push(list.first)
     list = list.rest
   }
   return arr

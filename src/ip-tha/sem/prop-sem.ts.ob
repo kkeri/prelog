@@ -1,0 +1,29 @@
+import { Semantics } from "../interpreter"
+import { getBaseSemantics } from "./base-sem.ts.ob"
+
+// Semantics for propositional logic
+
+let semantics: Semantics | undefined
+
+export function getPropSemantics () {
+  if (!semantics) semantics = initSemantics()
+  return semantics
+}
+
+function initSemantics (): Semantics {
+  const baseSemantics = getBaseSemantics()
+  return {
+    evaluationRules: baseSemantics.evaluationRules,
+
+    lookupRules: baseSemantics.lookupRules,
+
+    proactiveRules: baseSemantics.proactiveRules,
+
+    retroactiveRules: baseSemantics.retroactiveRules,
+
+    joinRules: baseSemantics.joinRules,
+
+    meetRules: baseSemantics.meetRules,
+  }
+}
+

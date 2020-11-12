@@ -33,7 +33,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/lib/prelog.js",
+            "program": "${workspaceFolder}/lib/cli/prelog.js",
             "args": [],
             "preLaunchTask": "tsc: build - tsconfig.json",
             "outFiles": [

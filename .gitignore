@@ -63,9 +63,6 @@ typings/
 # files for manually running the code
 try
 
-# local notes
-notes
-
 # build artifacts
 bin
 lib

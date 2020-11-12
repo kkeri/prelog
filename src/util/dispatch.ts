@@ -5,46 +5,49 @@ type UnaryOp<
   Ctx,
   A extends object,
   R,
-  > = (ctx: Ctx, a: A) => R
+  E,
+  > = (ctx: Ctx, a: A, ...extra: E[]) => R
 
 interface UnaryCase<
   Ctx,
   A extends object,
   R,
+  E,
   > {
   classA: ClassSpec<A>,
-  fn: UnaryOp<Ctx, A, R>
+  fn: UnaryOp<Ctx, A, R, E>
 }
 
 type UnaryMap<
   Ctx,
   A extends object,
   R,
-  > = Map<ClassSpec<A>, UnaryOp<Ctx, A, R>>
+  E,
+  > = Map<ClassSpec<A>, UnaryOp<Ctx, A, R, E>>
 
-export class UnaryDispatcher<Ctx, A extends object, R extends object> {
-  map?: Map<ClassSpec<A>, UnaryOp<Ctx, A, R | null>>
+export class UnaryDispatcher<Ctx, A extends object, R, E = never> {
+  map?: Map<ClassSpec<A>, UnaryOp<Ctx, A, R | null, E>>
 
   constructor (
     // The default case.
-    public def: UnaryOp<Ctx, A, R>,
+    public def: UnaryOp<Ctx, A, R, E>,
     // An implementation case for a class.
-    public casee?: UnaryCase<Ctx, A, R | null>,
+    public casee?: UnaryCase<Ctx, A, R | null, E>,
     // The next one in the chain of dispatchers.
-    public parent?: UnaryDispatcher<Ctx, A, R>,
+    public parent?: UnaryDispatcher<Ctx, A, R, E>,
   ) { }
 
   // Adds a new function to the dispatcher.
-  add<T extends A> (classA: ClassSpec<T>, fn: UnaryOp<Ctx, T, R | null>)
-    : UnaryDispatcher<Ctx, A, R> {
+  add<T extends A> (classA: ClassSpec<T>, fn: UnaryOp<Ctx, T, R | null, E>)
+    : UnaryDispatcher<Ctx, A, R, E> {
     return new UnaryDispatcher(this.def, { classA, fn }, this)
   }
 
-  apply<T extends A> (ctx: Ctx, a: T): R {
+  apply<T extends A> (ctx: Ctx, a: T, ...extra: E[]): R {
     if (!this.map) this.map = this.buildMap()
     const fnExact = this.map.get(a.constructor as unknown as ClassSpec<A>)
     if (fnExact) {
-      const r = fnExact(ctx, a)
+      const r = fnExact(ctx, a, ...extra)
       if (r !== null) return r
     }
     const fnAny = this.map.get(null)
@@ -56,9 +59,9 @@ export class UnaryDispatcher<Ctx, A extends object, R extends object> {
   }
 
   // Builds a dispatcher map on demand.
-  private buildMap (): UnaryMap<Ctx, A, R | null> {
-    const map: UnaryMap<Ctx, A, R | null> = new Map()
-    let next: UnaryDispatcher<Ctx, A, R> | undefined = this
+  private buildMap (): UnaryMap<Ctx, A, R | null, E> {
+    const map: UnaryMap<Ctx, A, R | null, E> = new Map()
+    let next: UnaryDispatcher<Ctx, A, R, E> | undefined = this
     while (next) {
       const casee = next.casee
       if (casee) map.set(casee.classA, casee.fn)
@@ -93,7 +96,7 @@ type BinaryMap<
   R,
   > = Map<ClassSpec<A>, Map<ClassSpec<B>, BinaryOp<Ctx, A, B, R | null>>>
 
-export class BinaryDispatcher<Ctx, A extends object, B extends object, R extends object> {
+export class BinaryDispatcher<Ctx, A extends object, B extends object, R> {
   map?: BinaryMap<Ctx, A, B, R>
 
   constructor (

@@ -1,0 +1,12 @@
+import { Dictionary } from "../../util/types"
+import { Semantics } from "../interpreter"
+import { getBaseSemantics } from "./base-sem.ts.ob"
+import { getPropSemantics } from "./prop-sem.ts.ob"
+import { getStdSemantics } from "./std-sem.ts.ob"
+
+// Dictionary of all built-in semantics.
+export const semantics: Dictionary<() => Semantics> = {
+  base: getBaseSemantics,
+  std: getStdSemantics,
+  prop: getPropSemantics,
+}

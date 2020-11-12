@@ -1,0 +1,51 @@
+import { success, undef } from "../const"
+import { derive, resolve, Semantics } from "../interpreter"
+import { structEqual } from "../model/base-model"
+import { Block, Definition, SemanticsErr } from "../model/comp-model"
+import { Sym } from "../model/prim-model"
+import { getBaseSemantics } from "./base-sem.ts.ob"
+
+// Standard semantics
+
+let semantics: Semantics | undefined
+
+export function getStdSemantics () {
+  if (!semantics) semantics = initSemantics()
+  return semantics
+}
+
+function initSemantics (): Semantics {
+  const baseSemantics = getBaseSemantics()
+  return {
+    evaluationRules: baseSemantics.evaluationRules,
+
+    lookupRules: baseSemantics.lookupRules
+      .add(Definition, Sym,
+        (ip, a, b) => structEqual(a.a, b) ? a.b : undef)
+    ,
+
+    proactiveRules: baseSemantics.proactiveRules
+      .add(Definition, null,
+        (ip, a, b) => structEqual(a.a, b) ? a.b : b)
+      .add(Definition, Definition,
+        (ip, a, b) => structEqual(a.a, b.a)
+          ? structEqual(a.b, b.b)
+            ? success
+            : new SemanticsErr('conflicting definition', b)
+          : b)
+      .add(Block, Block,
+        (ip, a, b) => derive(ip, a.body, b.body))
+    ,
+
+    retroactiveRules: baseSemantics.retroactiveRules
+      .add(null, Definition,
+        (ip, a, b) => structEqual(a, b.a) ? b.b : a)
+      .add(Definition, Definition,
+        (ip, a, b) => new Definition(resolve(ip, a.a, b.a), resolve(ip, a.b, b.b)))
+    ,
+
+    joinRules: baseSemantics.joinRules,
+
+    meetRules: baseSemantics.meetRules,
+  }
+}

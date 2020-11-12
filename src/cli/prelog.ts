@@ -1,31 +1,49 @@
 import * as colors from 'colors'
-import { createReadStream } from 'fs'
+import { createReadStream, readFileSync } from 'fs'
 import * as readline from 'readline'
-import { NativeInterpreter } from '../interpreter/interpreter'
-import { stdSemantics } from '../interpreter/semantics'
-import { parser } from '../parser'
-import { printActions } from '../print'
-import { PrintStream } from '../stream'
+import { parser } from '../core/parser'
+import { printActions } from '../core/print'
+import { PrintStream } from '../core/stream'
+import { thaLanguages } from '../ip-tha/interpreter'
+import { lispLanguages } from '../ip-lisp/language'
 import { Diagnostics } from '../util/diag'
 import { PrettyFormatter } from '../util/format'
 import { ModelPrinter } from '../util/printer'
 import yargs = require('yargs')
+import { Cons, List, nil } from '../core/syntax'
 
 // Command line interface
 
 const MultiStream = require('multistream')
 const pkg = require('../../package.json')
 
+const languages = {
+  ...thaLanguages,
+  ...lispLanguages,
+}
+
 const argv = yargs
   .options({
-    'e': {
-      alias: 'eval',
+    'eval': {
+      alias: 'e',
       describe: 'evaluation mode',
       type: 'boolean'
     },
+    'language': {
+      alias: 'l',
+      describe: 'language',
+      type: 'string',
+      choices: Object.getOwnPropertyNames(languages),
+      default: 'prop',
+    },
+    'file': {
+      alias: 'f',
+      describe: 'read program from file',
+      type: 'string',
+    },
   })
   .version(`prelog v${pkg.version}`)
-  .usage(`Prelog interpreter v${pkg.version}\nUsage:\n  prelog <options> filenames...`)
+  .usage(`Prelog interpreter v${pkg.version}\nUsage:\n  prelog <options>`)
   .help()
   .argv
 
@@ -40,7 +58,7 @@ export const styles = {
 
 const formatOptions = {
   indentSize: 2,
-  breakLimit: 0,
+  breakLimit: 70,
   lineBreak: '\n'
 }
 
@@ -59,17 +77,25 @@ const output = process.stdout
 const inputIsTTY = input === process.stdin && process.stdin.isTTY
 const outputIsTTy = output === process.stdout && process.stdout.isTTY
 
-const interpreter = new NativeInterpreter({
-  sem: stdSemantics,
-  inputs: {},
-  outputs: { stdout: new PrintStream(printer) },
-})
-
 const rl = readline.createInterface({
   input,
   output,
   terminal: inputIsTTY && outputIsTTy,
 })
+
+const ip = languages[argv.language].createInterpreter(new PrintStream(printer), () => {
+  rl.close()
+  process.exit()
+})
+
+const files = Array.isArray(argv.file)
+  ? argv.file as string[]
+  : argv.file ? [argv.file] : []
+
+for (const file of files) {
+  const text = readFileSync(file, 'utf8')
+  processSequence(text)
+}
 
 rl.setPrompt('prelog> ')
 if (inputIsTTY && outputIsTTy) rl.prompt(true)
@@ -77,15 +103,7 @@ if (inputIsTTY && outputIsTTy) rl.prompt(true)
 rl.on('line', (line) => {
   try {
     if (line.trim() === '') return
-    const diag = new Diagnostics()
-    const term = parser.parse(line, { diag, rule: 'Term' })
-    if (term) {
-      const result = interpreter.extend(term)
-      printer.print(result).br()
-    }
-    for (const msg of diag.messages) {
-      process.stderr.write(msg.message + '\n')
-    }
+    processSequence(line)
   }
   finally {
     // calling prompt after closing prevents termination
@@ -93,6 +111,23 @@ rl.on('line', (line) => {
   }
 })
 
-rl.on('close', () => {
-  if (inputIsTTY && outputIsTTy) output.write('\n')
-})
+// rl.on('close', () => {
+//   if (inputIsTTY && outputIsTTy) output.write('\n')
+// })
+
+process.once('SIGINT', () => output.write('exit\n'))
+
+function processSequence (text: string) {
+  const diag = new Diagnostics()
+  const tokens = parser.parse(text, { diag, rule: 'Tokens' })
+  // convert the array of tokens into a list
+  if (tokens) {
+    let list: List = nil
+
+    for (let i = tokens.length; --i >= 0;) list = new Cons(tokens[i], list)
+    ip.send(list)
+  }
+  for (const msg of diag.messages) {
+    process.stderr.write(msg.message + '\n')
+  }
+}

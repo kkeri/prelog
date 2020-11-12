@@ -1,50 +1,37 @@
 Prelog {
 
-	Term = Sequence
+	Sequence = ListOf<Term, #space>
 
-	Sequence = NonemptyListOf<Primary, #spaceInline>
-
-	Primary =
+	Term =
 		| Parentheses
 		| Brackets
 		| Braces
-		| Symbol
+		| identifier
+		| operator
 		| number
 		| string
 
-	Parentheses =
-		| "(" NonemptyListOf<Term, #comma> #comma? ")" -- full
-		| "(" ")" -- empty
+	Parentheses = "(" Sequence ")"
 
-	Brackets =
-		| "[" NonemptyListOf<Term, #comma> #comma? "]" -- full
-		| "[" "]" -- empty
+	Brackets = "[" Sequence "]"
 
-	Braces =
-		| "{" NonemptyListOf<Term, #semicolon> #semicolon? "}" -- full
-		| "{" "}" -- empty
+	Braces = "{" Sequence "}"
 
-	Symbol =
+	Tokens = Token*
+
+	Token =
 		| identifier
 		| operator
+		| number
+		| string
+		| delimiter
 
 	// lexer
 
-	space := "\t" | " " | "\n" | "\r" | comment
-	spaceInline = "\t" | " " | commentInline
+	space += comment
 	comment = blockComment | lineEndComment
-	commentInline = blockCommentInline | lineEndComment
 	blockComment = "/*" (~"*/" any)* "*/"
-	blockCommentInline = "/*" (~("*/" | "\n" | "\r") any)* "*/"
 	lineEndComment = "//" (~("\n" | "\r") any)*
-
-	semicolon =
-		| space* (";" | "," | end)
-		| spaceInline* ("\r" | "\n" | end)
-
-	comma =
-		| space* ("," | end)
-		| spaceInline* ("\r" | "\n" | end)
 
 	identifier = identifierStart identifierPart*
 	identifierStart = "A".."Z" | "a".."z" | "_" | "@"
@@ -55,6 +42,10 @@ Prelog {
 		| "+" | "-" | "*" | "/" | "%" | "^"
 		| "=" | "<" | ">"
 		| "#" | "&" | "|" | "§" | "?" | "!" | "×"
+
+	delimiter =
+		| "(" | ")" | "{" | "}" | "[" | "]"
+		| "," | ";"
 
 	number = "-"? natural ("." fractionalPart)? exponentPart?
 	natural = positiveInteger | "0"

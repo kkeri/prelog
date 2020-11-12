@@ -1,21 +1,18 @@
 import * as syntax from './syntax'
-import { ActionMap } from './util/action'
-import { Sequence, Cons, Parentheses, EmptyList, Syntax, listToArray } from './syntax'
+import { Cons, listToArray, nil, Parentheses } from './syntax'
+import { ActionMap } from '../util/action'
 
 // Pretty-print rules for surface syntax.
 
 export const printActions = new ActionMap().addClasses(syntax, {
 
-  Sequence (printer, op) {
+  Cons (printer, op) {
     if (op === operator.sequence) {
       // copy the sequence to avoid circularity
-      printer.print(new Parentheses(new Cons(
-        new Sequence(this.body),
-        new EmptyList(),
-      )))
+      printer.print(new Parentheses(new Cons(this, nil)))
     }
     else {
-      printer.naryOperation(operator.sequence, op, syntax.listToArray(this.body))
+      printer.naryOperation(operator.sequence, op, syntax.listToArray(this))
     }
   },
 
@@ -23,7 +20,7 @@ export const printActions = new ActionMap().addClasses(syntax, {
     printer.fmt.block(listToArray(this.body), (elem) => printer.print(elem), {
       open: '(',
       close: ')',
-      separator: ', ',
+      separator: ' ',
     })
   },
 
@@ -31,7 +28,7 @@ export const printActions = new ActionMap().addClasses(syntax, {
     printer.fmt.block(listToArray(this.body), (elem) => printer.print(elem), {
       open: { value: '[' },
       close: { value: ']' },
-      terminator: { value: ', ', breakValue: '' }
+      separator: { value: ' ', breakValue: '' }
     })
   },
 
@@ -39,7 +36,7 @@ export const printActions = new ActionMap().addClasses(syntax, {
     printer.fmt.block(listToArray(this.body), (elem) => printer.print(elem), {
       open: { value: '{' },
       close: { value: '}' },
-      terminator: { value: '; ', breakValue: '' }
+      separator: { value: ' ', breakValue: '' }
     })
   },
 
