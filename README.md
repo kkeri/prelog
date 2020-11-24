@@ -77,7 +77,7 @@ Concrete interpretation can be described in various conceptual frameworks.
   The proof is reduced to a minimal proof in context of the current axioms
   and the minimal proof is appended to the system as a new axiom.
 
-The functional interpretation is a bit off because not only
+The functional analogy is a bit off because not only
 definitions get appended to the environment but all kinds of terms.
 
 ## Metacommands
@@ -101,7 +101,7 @@ There are five truth values:
 -2 Failure
 ~~~
 
-When a truth value is assigned to a model, it is called the rank of the model.
+When a truth value is assigned to a model, it is called the *rank* of the model.
 
 In a nutshell, conjunction and disjunction is modeled after
 `min` and `max` respectively, however `failure` on the left side shortcuts conjunction
