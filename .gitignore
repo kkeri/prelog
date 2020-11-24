@@ -74,3 +74,6 @@ lib
 # local notes
 
 *-local*
+
+# VS Code settings
+.vscode
