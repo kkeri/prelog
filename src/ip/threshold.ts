@@ -1,10 +1,11 @@
-import { Model } from "./model/base-model"
 import { Dictionary } from "../util/types"
-import { success, failure } from "./const"
-import { Theory, join, meet } from "./interpreter"
+import { failure, success } from "./const"
+import { Theory } from "./interpreter"
+import { Model } from "./model/base-model"
 import { Rank } from "./rank"
+import { join, meet } from "./rules"
 
-// Generic operations
+// Generic logical operations
 
 export type ShortcutCombinator =
   (th: Theory, a: Model, bf: () => Model) => Model
@@ -27,7 +28,7 @@ export const thresholdMeet = (threshold: Rank) =>
     return meet(th, a, b)
   }
 
-// Concrete logical connectives
+// Concrete logical operations
 
 export const upperJoin = thresholdJoin(Rank.Top)
 
@@ -41,18 +42,18 @@ export const lowerMeet = thresholdMeet(Rank.Bottom)
 
 export interface Signature {
   // The unit element of append.
-  unit: Model
+  initial: Model
   // Appends a new term to a model.
   append: ShortcutCombinator
-  // Returns true if a model can't be changed essentially by appendng to it.
-  saturated (model: Model): boolean
+  // Returns true if a model cannot be changed anymore by appending to it.
+  terminated (model: Model): boolean
 }
 
 export const signatures: Dictionary<Signature> = {
-  lm: { unit: success, append: lowerMeet, saturated: m => m.rank <= Rank.Bottom },
-  uj: { unit: failure, append: upperJoin, saturated: m => m.rank >= Rank.Top },
-  um: { unit: success, append: upperMeet, saturated: m => m.rank <= Rank.Bottom },
-  lj: { unit: failure, append: lowerJoin, saturated: m => m.rank >= Rank.Top },
+  lm: { initial: success, append: lowerMeet, terminated: m => m.rank <= Rank.Bottom },
+  um: { initial: success, append: upperMeet, terminated: m => m.rank <= Rank.Bottom },
+  lj: { initial: failure, append: lowerJoin, terminated: m => m.rank >= Rank.Top },
+  uj: { initial: failure, append: upperJoin, terminated: m => m.rank >= Rank.Top },
 }
 
 // Helpers

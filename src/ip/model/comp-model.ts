@@ -1,9 +1,8 @@
 import * as syntax from "../../core/syntax"
-import { arrayToList, equalSyntax } from "../../core/syntax"
-import { Syntax } from "../../core/types"
-import { meet, join, Interpreter, translate, resolve, Theory } from "../interpreter"
+import { arrayToList, equalSyntax, Syntax } from "../../core/syntax"
+import { Interpreter, Theory } from "../interpreter"
 import { Rank } from "../rank"
-import { BlockSyntaxReader } from "../reader"
+import { interpret, join, meet } from "../rules"
 import { Model, structEqual } from "./base-model"
 
 // Compound models
@@ -130,13 +129,13 @@ export class Process extends Model {
     ])
   }
 
-  apply (ip: Interpreter, args: BlockSyntaxReader): Model {
+  apply (ip: Interpreter, args: syntax.List): [Model, syntax.List] {
     const childIp: Interpreter = {
       ...ip,
+      parent: ip,
       args,
     }
-    const reader = new BlockSyntaxReader(this.body)
-    return resolve(childIp, ip.program, translate(childIp, reader))
+    return [interpret(childIp, this.body), childIp.args]
   }
 
   join (other: this) {
@@ -153,7 +152,7 @@ export class NativeProcess extends Model {
 
   constructor (
     public name: Model,
-    public nativeFn: (ip: Interpreter, reader: BlockSyntaxReader) => Model,
+    public nativeFn: (ip: Interpreter, args: syntax.List) => [Model, syntax.List],
   ) { super() }
 
   structEqual (other: this): boolean {
@@ -164,59 +163,8 @@ export class NativeProcess extends Model {
     return this.name.reflect()
   }
 
-  apply (ip: Interpreter, reader: BlockSyntaxReader): Model {
-    return this.nativeFn(ip, reader)
-  }
-
-  join (other: this) {
-    return this === other ? this : null
-  }
-
-  meet (other: this) {
-    return this === other ? this : null
-  }
-}
-
-export class Block extends Model {
-  rank = Rank.Neutral
-
-  constructor (
-    public body: Model,
-  ) { super() }
-
-  structEqual (other: this): boolean {
-    return structEqual(this.body, other.body)
-  }
-
-  reflect () {
-    return this.body.reflect()
-  }
-
-  join (other: this, th: Theory) {
-    return new Block(join(th, this.body, other.body))
-  }
-
-  meet (other: this, th: Theory) {
-    return new Block(meet(th, this.body, other.body))
-  }
-}
-
-export class Ref extends Model {
-  rank = Rank.Neutral
-
-  constructor (
-    public value: Model,
-  ) { super() }
-
-  structEqual (other: this): boolean {
-    return this === other
-  }
-
-  reflect () {
-    return arrayToList([
-      new syntax.Sym('ref'),
-      this.value.reflect(),
-    ])
+  apply (ip: Interpreter, args: syntax.List): [Model, syntax.List] {
+    return this.nativeFn(ip, args)
   }
 
   join (other: this) {
@@ -245,27 +193,6 @@ export class SyntaxErr extends Model {
       new syntax.Sym('error'),
       new syntax.Str(this.descr),
       this.syntax,
-    ])
-  }
-}
-
-export class SemanticsErr extends Model {
-  rank = Rank.Bottom
-
-  constructor (
-    public descr: string,
-    public model,
-  ) { super() }
-
-  structEqual (other: this): boolean {
-    return this.descr === other.descr && structEqual(this.model, other.model)
-  }
-
-  reflect () {
-    return arrayToList([
-      new syntax.Sym('error'),
-      new syntax.Str(this.descr),
-      this.model.reflect(),
     ])
   }
 }

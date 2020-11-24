@@ -2,7 +2,7 @@
   "name": "prelog-lang",
   "private": true,
   "version": "0.0.1",
-  "description": "A prelogical programming language",
+  "description": "An extendable propositional calculus",
   "bin": {
     "prelog": "lib/cli/prelog.js"
   },

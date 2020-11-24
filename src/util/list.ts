@@ -1,5 +1,5 @@
 import { Cons, List } from "../core/syntax"
-import { Syntax } from "../core/types"
+import { Syntax } from "../core/syntax"
 
 export class ListReader {
   constructor (

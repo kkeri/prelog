@@ -1,5 +1,5 @@
 import { ModelPrinter } from "../util/printer"
-import { Syntax, SyntaxProcessor } from "./types"
+import { Syntax, SyntaxProcessor } from "./syntax"
 
 export class PrintStream implements SyntaxProcessor {
   constructor (

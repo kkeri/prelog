@@ -1,5 +1,5 @@
 import * as syntax from "../../core/syntax"
-import { Syntax } from "../../core/types"
+import { Syntax } from "../../core/syntax"
 import { Rank } from "../rank"
 import { Model } from "./base-model"
 

@@ -1,4 +1,12 @@
-import { Syntax } from "./types"
+
+export interface Syntax {
+  // Returns true if two syntax trees of the same type are structurally equal.
+  equalSyntax (other: this): boolean
+}
+
+export interface SyntaxProcessor {
+  send (term: Syntax): void
+}
 
 export class Brackets implements Syntax {
   constructor (
@@ -54,6 +62,10 @@ export class Nil implements Syntax {
 
 export function isList (term: Syntax): term is List {
   return term instanceof Cons || term instanceof Nil
+}
+
+export function isNil (list: List): list is Nil {
+  return list instanceof Nil
 }
 
 export class SyntaxErr implements Syntax {
@@ -112,6 +124,10 @@ export function arrayToList (items: Syntax[]): List {
     (rest, next) => new Cons(next, rest),
     nil,
   )
+}
+
+export function shiftList (list: Cons): [Syntax, List] {
+  return [list.first, list.rest]
 }
 
 export function listToArray (list: List): Syntax[] {

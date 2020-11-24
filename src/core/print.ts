@@ -53,6 +53,10 @@ export const printActions = new ActionMap().addClasses(syntax, {
   Num (printer) {
     printer.print(this.value)
   },
+
+  Nil (printer) {
+    printer.delimiter('()')
+  },
 })
 
 const operator = {

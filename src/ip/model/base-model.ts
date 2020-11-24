@@ -1,7 +1,6 @@
-import { Syntax } from "../../core/types"
+import { List, Syntax } from "../../core/syntax"
 import { Interpreter, Theory } from "../interpreter"
 import { Rank } from "../rank"
-import { BlockSyntaxReader } from "../reader"
 
 export abstract class Model {
   // Plays role in operations of threshold algebra.
@@ -13,8 +12,8 @@ export abstract class Model {
   }
 
   // Invokes the model in the current environment with the current arguments.
-  apply (ip: Interpreter, args: BlockSyntaxReader): Model {
-    return this
+  apply (ip: Interpreter, args: List): [Model, List] {
+    return [this, args]
   }
 
   // Converts the model to a corresponding syntax form.
